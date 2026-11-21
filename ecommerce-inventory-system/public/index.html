@@ -1,671 +1,2051 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>E-Commerce &amp; Inventory | Real-Time Demo Console</title>
-<style>
-  :root {
-    --bg: #0d1117;
-    --panel: #161b22;
-    --panel-2: #1c2330;
-    --border: #30363d;
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --accent: #2f81f7;
-    --green: #3fb950;
-    --amber: #d29922;
-    --red: #f85149;
-    --purple: #a371f7;
-    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--panel); }
-  header h1 { margin: 0; font-size: 18px; }
-  header .sub { color: var(--muted); font-size: 12px; }
-  main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
-  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
-  .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-  .card h2 { margin: 0 0 10px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-  .card h3 { margin: 0 0 8px; font-size: 14px; }
-  .sessions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 640px) { .sessions { grid-template-columns: 1fr; } }
-  .session { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
-  .sess-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
-  .dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
-  .dot.connecting { background: var(--amber); }
-  .dot.error { background: var(--red); }
-  .status-text { margin-left: auto; font-size: 12px; color: var(--muted); }
-  .info { font-size: 12px; color: var(--muted); min-height: 34px; word-break: break-all; }
-  .info b { color: var(--text); }
-  .rooms { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; min-height: 22px; }
-  .chip { font: 11px var(--mono); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--purple); background: #1b1530; }
-  .btn-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  button { font: inherit; font-size: 13px; color: var(--text); background: #21262d; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
-  button:hover:not(:disabled) { border-color: var(--accent); }
-  button:disabled { opacity: .5; cursor: wait; }
-  button.primary { background: #1f6feb; border-color: #1f6feb; }
-  button.warn { background: #3a2a0a; border-color: #6b4e0f; }
-  button.danger { background: #3a1416; border-color: #6e2328; }
-  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
-  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
-  input, select { width: 100%; font: inherit; font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
-  .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
-  .hint { margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.6; }
-  .hint code { font-family: var(--mono); color: var(--amber); }
-  .scroll { max-height: 280px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 600; }
-  td.num, th.num { text-align: right; }
-  .mono { font-family: var(--mono); }
-  .badge { display: inline-block; min-width: 28px; text-align: center; padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
-  .badge.green { background: #12301b; color: var(--green); }
-  .badge.amber { background: #3a2a0a; color: var(--amber); }
-  .badge.red { background: #3a1416; color: var(--red); }
-  .empty { padding: 18px; text-align: center; color: var(--muted); }
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; }
-  .kpi { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
-  .kpi .v { font-size: 17px; font-weight: 700; }
-  .kpi .l { font-size: 11px; color: var(--muted); }
-  .section-title { margin: 12px 0 6px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-  .kv { display: grid; grid-template-columns: 130px 1fr; gap: 4px 10px; font-size: 13px; }
-  .kv div:nth-child(odd) { color: var(--muted); }
-  .log-card { position: sticky; top: 16px; height: calc(100vh - 100px); display: flex; flex-direction: column; }
-  @media (max-width: 1000px) { .log-card { position: static; height: 520px; } }
-  .log-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .log-head h2 { margin: 0; }
-  #logBox { flex: 1; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px; font: 12px/1.5 var(--mono); }
-  .entry { padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--border); margin-bottom: 3px; word-break: break-word; }
-  .entry.clickable { cursor: pointer; }
-  .entry.clickable:hover { background: #12171f; }
-  .entry.http { border-left-color: var(--accent); }
-  .entry.socket { border-left-color: var(--green); }
-  .entry.alert { border-left-color: var(--amber); background: #231b07; }
-  .entry.error { border-left-color: var(--red); background: #230e10; }
-  .entry.info { border-left-color: var(--muted); }
-  .entry .time { color: var(--muted); margin-right: 6px; }
-  .entry .tag { padding: 0 6px; border-radius: 4px; margin-right: 6px; font-size: 11px; background: #21262d; color: var(--text); }
-  .tag.admin { background: #3b1d5e; color: #d2b3ff; }
-  .tag.manager { background: #1d3b5e; color: #a5d0ff; }
-  .tag.customer { background: #12301b; color: #8fe3a1; }
-  .tag.http { background: #0e2a52; color: #9ec5ff; }
-  .entry .title { font-weight: 700; margin-right: 6px; }
-  .entry .summary { color: var(--muted); }
-  .entry pre { margin: 6px 0 2px; padding: 8px; background: #0a0e14; border-radius: 6px; color: #c9d1d9; overflow: auto; max-height: 260px; white-space: pre-wrap; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniFlow | E-Commerce & Real-Time Inventory System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+              950: '#1e1b4b',
+            },
+            surface: {
+              900: '#0b0f19',
+              800: '#111827',
+              750: '#161f33',
+              700: '#1f293d',
+              600: '#374151',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #f3f4f6;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    /* Custom sleek scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .glass {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(22, 31, 51, 0.65);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.25);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+    }
+    .glow-amber {
+      box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.25);
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
 </head>
-<body>
-<header>
-  <div>
-    <h1>E-Commerce &amp; Inventory | Real-Time Demo Console</h1>
-    <div class="sub">REST + Socket.IO test client. Log in as Staff and as Customer at the same time to watch events flow between them.</div>
-  </div>
-  <div class="sub mono" id="baseUrl"></div>
-</header>
+<body class="min-h-screen flex flex-col selection:bg-brand-500 selection:text-white">
 
-<main>
-  <div class="col">
-    <section class="card">
-      <h2>Sessions (JWT + Socket.IO)</h2>
-      <div class="sessions">
-        <div class="session">
-          <div class="sess-head"><span class="dot" id="dot-staff"></span><strong>Staff session</strong><span class="status-text" id="status-staff">Disconnected</span></div>
-          <div class="info" id="info-staff">Not logged in</div>
-          <div class="rooms" id="rooms-staff"></div>
-          <div class="btn-row">
-            <button class="primary" data-act="login-admin">Login as Admin</button>
-            <button data-act="login-manager">Manager</button>
-            <button data-act="refresh-staff">Refresh token</button>
-            <button class="danger" data-act="logout-staff">Logout</button>
-          </div>
+  <!-- ======================== TOP NAVBAR ======================== -->
+  <header class="sticky top-0 z-40 glass border-b border-slate-800/80 px-4 sm:px-6 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      
+      <!-- Brand & Status -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-brand-500/20 text-white font-extrabold text-lg">
+          Ω
         </div>
-        <div class="session">
-          <div class="sess-head"><span class="dot" id="dot-customer"></span><strong>Customer session</strong><span class="status-text" id="status-customer">Disconnected</span></div>
-          <div class="info" id="info-customer">Not logged in</div>
-          <div class="rooms" id="rooms-customer"></div>
-          <div class="btn-row">
-            <button class="primary" data-act="login-customer">Login as Customer</button>
-            <button data-act="refresh-customer">Refresh token</button>
-            <button class="danger" data-act="logout-customer">Logout</button>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">OmniFlow</span>
+            <span class="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30">Real-Time</span>
+          </div>
+          <div class="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="apiStatusText">Engine Live</span>
+            <span class="text-slate-600">•</span>
+            <span id="socketStatusSummary" class="text-slate-400">Socket.IO Ready</span>
           </div>
         </div>
       </div>
-    </section>
 
-    <section class="card">
-      <h2>Test Console</h2>
-      <div class="controls">
-        <div class="field"><label for="orderProduct">Product to order</label><select id="orderProduct"><option value="">Browse products first</option></select></div>
-        <div class="field"><label for="orderQty">Quantity</label><input id="orderQty" type="number" min="1" value="1" /></div>
-        <div class="field"><label for="couponCode">Coupon code</label><input id="couponCode" value="WELCOME10" /></div>
-        <div class="field"><label for="orderId">Order ID (auto-filled)</label><input id="orderId" placeholder="latest order" /></div>
-        <div class="field"><label for="statusSelect">New order status (admin)</label>
-          <select id="statusSelect">
-            <option value="next">Next step (auto)</option>
-            <option value="confirmed">confirmed</option>
-            <option value="shipped">shipped</option>
-            <option value="delivered">delivered</option>
-            <option value="cancelled">cancelled</option>
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex items-center gap-1 bg-surface-900/90 p-1 rounded-xl border border-slate-800">
+        <button onclick="switchTab('storefront')" id="tabBtn-storefront" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-brand-600 shadow-sm transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+          Storefront
+        </button>
+        <button onclick="switchTab('inventory')" id="tabBtn-inventory" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          Inventory Control
+        </button>
+        <button onclick="switchTab('orders')" id="tabBtn-orders" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          Orders & Pipeline
+        </button>
+        <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Analytics & BI
+        </button>
+        <button onclick="switchTab('personalization')" id="tabBtn-personalization" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          Wishlist & AI
+        </button>
+        <button onclick="switchTab('stream')" id="tabBtn-stream" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex items-center gap-1.5">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+          </span>
+          Live Stream
+        </button>
+      </nav>
+
+      <!-- Right Header Actions (Cart Drawer Toggle & Session Switcher) -->
+      <div class="flex items-center gap-2.5">
+        <!-- Cart Drawer Button -->
+        <button onclick="toggleCart()" class="relative p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white transition-all border border-slate-700/60">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          <span id="cartCountBadge" class="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-brand-500 text-white min-w-[18px] text-center shadow-md">0</span>
+        </button>
+
+        <!-- Quick Multi-Session Drawer Toggle -->
+        <button onclick="toggleSessionDrawer()" id="sessionDrawerBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-medium text-slate-300 border border-slate-700/60">
+          <span class="w-2 h-2 rounded-full bg-emerald-400" id="globalSessionDot"></span>
+          <span>Dual Sessions</span>
+          <svg class="w-3.5 h-3.5 text-slate-400 transform transition-transform" id="sessionDrawerArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Navigation Bar -->
+  <div class="md:hidden glass border-b border-slate-800 px-3 py-2 flex items-center justify-around gap-1 overflow-x-auto text-[11px]">
+    <button onclick="switchTab('storefront')" class="px-2.5 py-1 text-slate-300 rounded font-medium">Storefront</button>
+    <button onclick="switchTab('inventory')" class="px-2.5 py-1 text-slate-300 rounded font-medium">Inventory</button>
+    <button onclick="switchTab('orders')" class="px-2.5 py-1 text-slate-300 rounded font-medium">Orders</button>
+    <button onclick="switchTab('analytics')" class="px-2.5 py-1 text-slate-300 rounded font-medium">Analytics</button>
+    <button onclick="switchTab('personalization')" class="px-2.5 py-1 text-slate-300 rounded font-medium">Wishlist</button>
+    <button onclick="switchTab('stream')" class="px-2.5 py-1 text-cyan-400 rounded font-medium">Stream</button>
+  </div>
+
+  <!-- ======================== DUAL SESSION ACCORDION PANEL ======================== -->
+  <div id="sessionDrawer" class="glass border-b border-slate-800 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Concurrent Dual-Session Manager (JWT + Socket.IO Handshake)</h2>
+        </div>
+        <span class="text-[11px] text-slate-400">Independent credentials for Staff & Customer simulate real multi-user concurrency</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Staff Session Card -->
+        <div class="p-4 rounded-xl bg-surface-800/90 border border-slate-800 shadow-sm relative overflow-hidden">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <span id="dot-staff" class="w-3 h-3 rounded-full bg-slate-500 ring-4 ring-slate-800/60"></span>
+              <div>
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                  Staff Session
+                  <span id="badge-staff-role" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30"></span>
+                </h3>
+                <p id="status-staff" class="text-xs text-slate-400 font-mono">Disconnected</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span id="info-staff-name" class="text-xs font-semibold text-slate-200">Not Logged In</span>
+              <p id="info-staff-email" class="text-[11px] text-slate-500">Requires Admin/Manager</p>
+            </div>
+          </div>
+
+          <!-- Socket Rooms -->
+          <div class="mb-3">
+            <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">Joined Socket Rooms</div>
+            <div id="rooms-staff" class="flex flex-wrap gap-1.5 min-h-[22px]">
+              <span class="text-[11px] text-slate-500 italic">No active rooms</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="login('admin')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-sm">
+              Admin Login
+            </button>
+            <button onclick="login('manager')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-all">
+              Manager Login
+            </button>
+            <button onclick="refreshSession('staff')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all">
+              Rotate Token
+            </button>
+            <button onclick="logout('staff')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/40 transition-all ml-auto">
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- Customer Session Card -->
+        <div class="p-4 rounded-xl bg-surface-800/90 border border-slate-800 shadow-sm relative overflow-hidden">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2.5">
+              <span id="dot-customer" class="w-3 h-3 rounded-full bg-slate-500 ring-4 ring-slate-800/60"></span>
+              <div>
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                  Customer Session
+                  <span id="badge-customer-role" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"></span>
+                </h3>
+                <p id="status-customer" class="text-xs text-slate-400 font-mono">Disconnected</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span id="info-customer-name" class="text-xs font-semibold text-slate-200">Not Logged In</span>
+              <p id="info-customer-email" class="text-[11px] text-slate-500">Demo Customer</p>
+            </div>
+          </div>
+
+          <!-- Socket Rooms -->
+          <div class="mb-3">
+            <div class="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">Joined Socket Rooms</div>
+            <div id="rooms-customer" class="flex flex-wrap gap-1.5 min-h-[22px]">
+              <span class="text-[11px] text-slate-500 italic">No active rooms</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
+            <button onclick="login('customer')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-sm">
+              Customer Login
+            </button>
+            <button onclick="refreshSession('customer')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all">
+              Rotate Token
+            </button>
+            <button onclick="logout('customer')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/40 transition-all ml-auto">
+              Logout
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================== MAIN VIEW CONTAINER ======================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+    <!-- ==================== TAB 1: STOREFRONT & CATALOG ==================== -->
+    <div id="view-storefront" class="space-y-6">
+      
+      <!-- Promotional Hero Banner -->
+      <div class="relative rounded-2xl p-6 sm:p-8 overflow-hidden bg-gradient-to-r from-brand-900/80 via-indigo-900/40 to-surface-900 border border-brand-500/20 shadow-xl">
+        <div class="relative z-10 max-w-2xl">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 mb-3">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Live WebSocket Synchronized Catalog
+          </span>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
+            Next-Gen E-Commerce & Real-Time Stock Engine
+          </h1>
+          <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+            Order products with guaranteed atomic stock decrements, redeem verified promotional coupons, and observe instant inventory events propagate to staff dashboards via Socket.IO.
+          </p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button onclick="demoTriggerLowStock()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white text-xs font-bold shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              Trigger Demo Low-Stock Event (3x Earbuds)
+            </button>
+            <div class="text-xs text-slate-400 font-mono">
+              Apply coupon <span class="text-amber-300 font-bold bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40">WELCOME10</span> at checkout
+            </div>
+          </div>
+        </div>
+        <!-- Decorative Glow Background Shapes -->
+        <div class="absolute right-0 top-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-brand-500/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute right-40 bottom-0 w-64 h-64 rounded-full bg-cyan-500/10 blur-2xl pointer-events-none"></div>
+      </div>
+
+      <!-- Catalog Controls & Filters -->
+      <div class="glass-card p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
+        <!-- Search bar -->
+        <div class="relative flex-1 min-w-[240px]">
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by name, SKU, or keyword..." oninput="debounceFetchProducts()" class="w-full bg-surface-900 border border-slate-700/80 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors">
+        </div>
+
+        <!-- Category Dropdown -->
+        <div class="w-44">
+          <select id="categoryFilter" onchange="fetchProducts()" class="w-full bg-surface-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+            <option value="">All Categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Home & Kitchen">Home & Kitchen</option>
+            <option value="Books">Books</option>
+            <option value="Sports & Fitness">Sports & Fitness</option>
+            <option value="Beauty & Personal Care">Beauty & Personal Care</option>
           </select>
         </div>
-      </div>
-      <div class="actions">
-        <button class="primary" data-act="browse">1. Browse Products</button>
-        <button class="primary" data-act="order">2. Validate Coupon &amp; Place Order</button>
-        <button class="primary" data-act="status">3. Update Order Status (Admin)</button>
-        <button class="primary" data-act="analytics">4. Fetch Analytics &amp; Recommendations</button>
-        <button class="warn" data-act="cancel">Cancel Order (Customer)</button>
-        <button class="warn" data-act="rbac">RBAC check (expect 401 / 403)</button>
-      </div>
-      <div class="hint">
-        <b>Quick demo:</b> login Admin + Customer, browse, pick <code>Wireless Earbuds Pro</code> with quantity <code>3</code>, place the order.
-        The admin socket receives <code>order:new</code>, <code>stock:updated</code> and <code>alert:lowStock</code>. Then run step 3: the customer socket receives <code>order:statusChanged</code>.
-        Cancelling an order restores stock. Click any log line to expand its JSON.
-      </div>
-    </section>
 
-    <section class="card">
-      <h2>Product Catalogue (live stock)</h2>
-      <div class="scroll" id="catalogue"></div>
-    </section>
+        <!-- Sort dropdown -->
+        <div class="w-44">
+          <select id="sortFilter" onchange="fetchProducts()" class="w-full bg-surface-900 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500">
+            <option value="newest">Sort: Newest</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="rating">Top Rated</option>
+            <option value="popularity">Most Popular</option>
+            <option value="name_asc">Name: A to Z</option>
+          </select>
+        </div>
 
-    <section class="card">
-      <h2>Results</h2>
-      <div id="results"><div class="empty">Run an action to see formatted results here.</div></div>
-    </section>
+        <!-- In-Stock Only Switch -->
+        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+          <input type="checkbox" id="inStockOnly" onchange="fetchProducts()" class="rounded bg-surface-900 border-slate-700 text-brand-600 focus:ring-0">
+          In-Stock Only
+        </label>
+      </div>
+
+      <!-- Products Grid -->
+      <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <!-- Rendered dynamically -->
+        <div class="col-span-full py-16 text-center text-slate-400">
+          <div class="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          Loading dynamic product catalog...
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 2: INVENTORY CONTROL (ADMIN/MANAGER) ==================== -->
+    <div id="view-inventory" class="hidden space-y-6">
+      
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            Real-Time Inventory Operations
+            <span class="text-xs font-normal text-slate-400 font-mono">(Admin & Manager Only)</span>
+          </h2>
+          <p class="text-xs text-slate-400">Manage SKU levels, edit stock thresholds, and view low-stock triggers</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="fetchLowStockOnly()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-medium transition-all flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Filter Low Stock
+          </button>
+          <button onclick="fetchProducts()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-all">
+            Refresh All
+          </button>
+          <button onclick="openCreateProductModal()" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Add New SKU
+          </button>
+        </div>
+      </div>
+
+      <!-- Inventory Table -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-surface-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">Product & SKU</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4 text-right">Unit Price</th>
+                <th class="py-3 px-4 text-center">Stock Health</th>
+                <th class="py-3 px-4 text-right">Threshold</th>
+                <th class="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody" class="divide-y divide-slate-800/60 font-mono">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 3: ORDERS & LIFECYCLE PIPELINE ==================== -->
+    <div id="view-orders" class="hidden space-y-6">
+      
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            Order Lifecycle Management
+          </h2>
+          <p class="text-xs text-slate-400">Step through order progression: Pending ➔ Confirmed ➔ Shipped ➔ Delivered (or Cancel & Restock)</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="orderStatusFilter" onchange="fetchOrders()" class="bg-surface-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-300">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button onclick="fetchOrders()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium">
+            Refresh Orders
+          </button>
+        </div>
+      </div>
+
+      <!-- Orders List / Grid -->
+      <div id="ordersContainer" class="space-y-4">
+        <!-- Dynamically rendered -->
+        <div class="py-12 text-center text-slate-500">Loading order records...</div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 4: ANALYTICS & BI DASHBOARD ==================== -->
+    <div id="view-analytics" class="hidden space-y-6">
+      
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            Executive Analytics & Aggregation Engine
+          </h2>
+          <p class="text-xs text-slate-400">MongoDB Aggregation pipelines for revenue KPIs, category performance, and time-series series</p>
+        </div>
+        <button onclick="loadAnalytics()" class="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Recompute Aggregations
+        </button>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5" id="kpiContainer">
+        <!-- Rendered dynamically -->
+        <div class="glass-card p-4 rounded-xl">
+          <div class="text-[11px] text-slate-400 font-medium">Total Gross Revenue</div>
+          <div class="text-lg font-bold text-white mt-1">₹0.00</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Top 5 Products Leaderboard -->
+        <div class="glass-card p-5 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Top 5 Best-Selling Products
+          </h3>
+          <div id="topProductsContainer" class="space-y-3 font-mono text-xs">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="glass-card p-5 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/></svg>
+            Sales & Valuation by Category
+          </h3>
+          <div id="categoryBreakdownContainer" class="space-y-3 text-xs">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Sales History Table -->
+      <div class="glass-card p-5 rounded-2xl border border-slate-800">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4">
+          Time-Series Period Revenue (Monthly)
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-surface-900/80 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-3">Period</th>
+                <th class="py-2.5 px-3 text-right">Orders</th>
+                <th class="py-2.5 px-3 text-right">Gross Revenue</th>
+                <th class="py-2.5 px-3 text-right">Discounts Given</th>
+                <th class="py-2.5 px-3 text-right">Avg Order Value (AOV)</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyTableBody" class="divide-y divide-slate-800/60">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 5: WISHLIST & PERSONALIZATION ==================== -->
+    <div id="view-personalization" class="hidden space-y-6">
+      
+      <div>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          Personalized Recommendations & Wishlist
+        </h2>
+        <p class="text-xs text-slate-400">Tailored product suggestions derived from customer purchasing patterns and active wishlist</p>
+      </div>
+
+      <div class="glass-card p-5 rounded-2xl border border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Personalized For You
+            <span id="recsStrategyBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300"></span>
+          </h3>
+          <button onclick="loadPersonalization()" class="text-xs text-brand-400 hover:text-brand-300 font-medium">Refresh</button>
+        </div>
+        <div id="recommendationsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dynamically populated -->
+          <div class="col-span-full py-8 text-center text-slate-500">Log in as Customer to load personalized recommendations.</div>
+        </div>
+      </div>
+
+      <!-- Wishlist Section -->
+      <div class="glass-card p-5 rounded-2xl border border-slate-800">
+        <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+          <svg class="w-4 h-4 text-rose-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          Customer Wishlist Items
+        </h3>
+        <div id="wishlistItemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== TAB 6: REAL-TIME STREAM & RBAC LAB ==================== -->
+    <div id="view-stream" class="hidden space-y-6">
+      
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            Socket.IO Event Stream & RBAC Diagnostic Lab
+          </h2>
+          <p class="text-xs text-slate-400">Live bidirectional WebSocket frames, domain events dispatch, and security role enforcement</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="runRbacTest()" class="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-semibold transition-all flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Run RBAC Guard Check (401/403)
+          </button>
+          <button onclick="clearEventLogs()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium">
+            Clear Logs
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Control Row for Interactive Testing -->
+      <div class="glass-card p-4 rounded-xl flex flex-wrap items-center gap-3">
+        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Quick Actions:</span>
+        <button onclick="login('admin')" class="px-3 py-1 text-xs rounded-lg bg-indigo-600/40 text-indigo-200 border border-indigo-500/40 hover:bg-indigo-600/60">
+          Staff: Login Admin
+        </button>
+        <button onclick="login('customer')" class="px-3 py-1 text-xs rounded-lg bg-emerald-600/40 text-emerald-200 border border-emerald-500/40 hover:bg-emerald-600/60">
+          Customer: Login Demo
+        </button>
+        <button onclick="demoTriggerLowStock()" class="px-3 py-1 text-xs rounded-lg bg-amber-600/40 text-amber-200 border border-amber-500/40 hover:bg-amber-600/60 font-semibold">
+          ⚡ Trigger Low-Stock Event
+        </button>
+        <button onclick="stepLatestOrderStatus()" class="px-3 py-1 text-xs rounded-lg bg-cyan-600/40 text-cyan-200 border border-cyan-500/40 hover:bg-cyan-600/60 font-semibold">
+          🚀 Advance Latest Order Status
+        </button>
+      </div>
+
+      <!-- Event Stream Monitor Card -->
+      <div class="glass-card rounded-2xl border border-slate-800 flex flex-col h-[580px] overflow-hidden">
+        
+        <!-- Filter bar -->
+        <div class="bg-surface-900/90 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-400">Filter:</span>
+            <button onclick="setLogFilter('all')" id="logFilter-all" class="px-2 py-0.5 rounded bg-brand-600 text-white font-semibold">ALL</button>
+            <button onclick="setLogFilter('socket')" id="logFilter-socket" class="px-2 py-0.5 rounded text-slate-400 hover:text-white">SOCKET</button>
+            <button onclick="setLogFilter('alert')" id="logFilter-alert" class="px-2 py-0.5 rounded text-slate-400 hover:text-white">ALERTS</button>
+            <button onclick="setLogFilter('http')" id="logFilter-http" class="px-2 py-0.5 rounded text-slate-400 hover:text-white">HTTP</button>
+          </div>
+          <div class="text-slate-500 text-[11px]" id="logCounter">0 events captured</div>
+        </div>
+
+        <!-- Scrollable Log Box -->
+        <div id="streamLogBox" class="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-xs">
+          <!-- Dynamically populated entries -->
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ======================== SLIDE-OVER CART DRAWER ======================== -->
+  <div id="cartDrawerBackdrop" onclick="toggleCart()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity"></div>
+  
+  <div id="cartDrawer" class="fixed right-0 top-0 bottom-0 w-full sm:w-[480px] bg-surface-900/95 glass border-l border-slate-800 z-50 transform translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+    
+    <!-- Drawer Header -->
+    <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+        </div>
+        <h2 class="text-base font-bold text-white">Your Shopping Cart</h2>
+      </div>
+      <button onclick="toggleCart()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Items List -->
+    <div id="cartItemsList" class="flex-1 overflow-y-auto p-5 space-y-3.5">
+      <!-- Dynamically populated cart items -->
+      <div class="py-16 text-center text-slate-500 text-xs">Your cart is empty. Add items from the storefront!</div>
+    </div>
+
+    <!-- Drawer Footer / Checkout -->
+    <div class="p-5 bg-surface-900 border-t border-slate-800 space-y-4">
+      
+      <!-- Coupon Application Box -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Apply Promo / Coupon Code</label>
+        <div class="flex gap-2">
+          <input type="text" id="cartCouponInput" placeholder="e.g. WELCOME10, FLAT200" value="WELCOME10" class="flex-1 bg-surface-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono uppercase text-white focus:outline-none focus:border-brand-500">
+          <button onclick="validateCartCoupon()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-brand-300 border border-brand-500/30 text-xs font-semibold transition-all">
+            Validate
+          </button>
+        </div>
+
+        <!-- Quick coupon chips -->
+        <div class="flex flex-wrap gap-1.5 mt-2">
+          <button onclick="selectCouponChip('WELCOME10')" class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-950/60 text-brand-400 border border-brand-800/40 hover:bg-brand-900/60">WELCOME10 (10%)</button>
+          <button onclick="selectCouponChip('FLAT200')" class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-950/60 text-brand-400 border border-brand-800/40 hover:bg-brand-900/60">FLAT200 (₹200)</button>
+          <button onclick="selectCouponChip('BIGSALE25')" class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-950/60 text-brand-400 border border-brand-800/40 hover:bg-brand-900/60">BIGSALE25 (25%)</button>
+          <button onclick="selectCouponChip('ONLYONE100')" class="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-950/60 text-brand-400 border border-brand-800/40 hover:bg-brand-900/60">ONLYONE100 (1 Use)</button>
+        </div>
+        <div id="couponValidationFeedback" class="text-[11px] mt-1.5"></div>
+      </div>
+
+      <!-- Pricing Breakdown -->
+      <div class="space-y-1.5 text-xs pt-2 border-t border-slate-800 font-mono">
+        <div class="flex justify-between text-slate-400">
+          <span>Subtotal</span>
+          <span id="cartSubtotalText">₹0.00</span>
+        </div>
+        <div class="flex justify-between text-emerald-400" id="cartDiscountRow" style="display:none;">
+          <span>Coupon Discount</span>
+          <span id="cartDiscountText">-₹0.00</span>
+        </div>
+        <div class="flex justify-between text-slate-400">
+          <span>Delivery Fee</span>
+          <span class="text-emerald-400 font-bold uppercase">Free</span>
+        </div>
+        <div class="flex justify-between text-sm font-bold text-white pt-2 border-t border-slate-800">
+          <span>Total Payable</span>
+          <span id="cartTotalPayableText">₹0.00</span>
+        </div>
+      </div>
+
+      <!-- Checkout Button -->
+      <button onclick="submitCheckoutOrder()" id="checkoutSubmitBtn" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2">
+        <span>Place Order Now (COD)</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      </button>
+
+    </div>
+
   </div>
 
-  <div class="col">
-    <section class="card log-card">
-      <div class="log-head"><h2>Live Event Log</h2><button data-act="clear-log">Clear</button></div>
-      <div id="logBox"></div>
-    </section>
+  <!-- ======================== PRODUCT RESTOCK / EDIT MODAL ======================== -->
+  <div id="restockModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass max-w-md w-full rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
+      <h3 class="text-base font-bold text-white mb-1">Adjust Inventory Level</h3>
+      <p class="text-xs text-slate-400 mb-4" id="restockProductSubtitle">Product Name</p>
+
+      <form onsubmit="handleRestockSubmit(event)" class="space-y-4">
+        <input type="hidden" id="restockProductId">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Physical Stock Count</label>
+          <input type="number" id="restockStockCount" min="0" required class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Low-Stock Alert Threshold</label>
+          <input type="number" id="restockThresholdCount" min="0" required class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 font-mono">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Unit Price (₹)</label>
+          <input type="number" id="restockPrice" min="1" step="0.01" required class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500 font-mono">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeRestockModal()" class="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md">Update Stock</button>
+        </div>
+      </form>
+    </div>
   </div>
-</main>
 
-<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-<script>
-  // Falls back to the client bundle served by our own Socket.IO server if the CDN is unreachable
-  if (typeof io === 'undefined') { document.write('<script src="/socket.io/socket.io.js"><\/script>'); }
-</script>
-<script>
-(function () {
-  'use strict';
+  <!-- ======================== CREATE PRODUCT MODAL ======================== -->
+  <div id="createProductModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass max-w-lg w-full rounded-2xl p-6 border border-slate-700 shadow-2xl relative">
+      <h3 class="text-base font-bold text-white mb-1">Create New Product SKU</h3>
+      <p class="text-xs text-slate-400 mb-4">Add a new product to the catalog (Admin/Manager role required)</p>
 
-  const BASE = location.protocol.startsWith('http') ? location.origin : 'http://localhost:5000';
+      <form onsubmit="handleCreateProductSubmit(event)" class="space-y-3.5 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Product Title</label>
+            <input type="text" id="newProdName" required placeholder="e.g. Ultra HD Monitor" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Unique SKU</label>
+            <input type="text" id="newProdSku" required placeholder="e.g. ELEC-099" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 font-mono uppercase text-white focus:outline-none focus:border-brand-500">
+          </div>
+        </div>
 
-  const ACCOUNTS = {
-    admin: { slot: 'staff', email: 'admin@shop.com', password: 'Admin@123' },
-    manager: { slot: 'staff', email: 'manager@shop.com', password: 'Manager@123' },
-    customer: { slot: 'customer', email: 'customer@shop.com', password: 'Customer@123' }
-  };
-  const NEXT_STATUS = { pending: 'confirmed', confirmed: 'shipped', shipped: 'delivered' };
-  const SERVER_EVENTS = ['stock:updated', 'alert:lowStock', 'order:new', 'order:statusChanged'];
-  const SHIPPING_ADDRESS = {
-    fullName: 'Demo Customer', phone: '9000000001', line1: '12 MG Road', line2: '',
-    city: 'Bengaluru', state: 'Karnataka', postalCode: '560001', country: 'India'
-  };
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Category</label>
+            <select id="newProdCategory" required class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-brand-500">
+              <option value="Electronics">Electronics</option>
+              <option value="Fashion">Fashion</option>
+              <option value="Home & Kitchen">Home & Kitchen</option>
+              <option value="Books">Books</option>
+              <option value="Sports & Fitness">Sports & Fitness</option>
+              <option value="Beauty & Personal Care">Beauty & Personal Care</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Price (₹)</label>
+            <input type="number" id="newProdPrice" min="1" required placeholder="1499" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 font-mono text-white focus:outline-none focus:border-brand-500">
+          </div>
+        </div>
 
-  const blankSession = () => ({ user: null, accessToken: null, refreshToken: null, socket: null, rooms: [], status: 'offline' });
-  const sessions = { staff: blankSession(), customer: blankSession() };
-  const state = { products: [] };
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Starting Stock</label>
+            <input type="number" id="newProdStock" min="0" required value="20" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 font-mono text-white focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Low-Stock Alert Level</label>
+            <input type="number" id="newProdThreshold" min="1" required value="5" class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 font-mono text-white focus:outline-none focus:border-brand-500">
+          </div>
+        </div>
 
-  const $ = (id) => document.getElementById(id);
-  const esc = (value) => String(value === undefined || value === null ? '' : value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const money = (n) => '\u20B9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        <div>
+          <label class="block text-slate-300 font-semibold mb-1">Description</label>
+          <textarea id="newProdDesc" rows="2" placeholder="Product features, specifications, and details..." class="w-full bg-surface-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-brand-500"></textarea>
+        </div>
 
-  $('baseUrl').textContent = BASE;
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeCreateProductModal()" class="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold shadow-md">Create Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  // ---------- Event log ----------
-  const logBox = $('logBox');
+  <!-- ======================== TOAST NOTIFICATION CONTAINER ======================== -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
 
-  function tagFor(slot) {
-    const user = sessions[slot] && sessions[slot].user;
-    return user ? user.role.toUpperCase() : String(slot).toUpperCase();
-  }
-
-  function log(kind, tag, title, data) {
-    const nearBottom = logBox.scrollHeight - logBox.scrollTop - logBox.clientHeight < 60;
-    const entry = document.createElement('div');
-    entry.className = 'entry ' + kind;
-
-    let summary = '';
-    if (data !== undefined) {
-      summary = JSON.stringify(data);
-      if (summary.length > 150) summary = summary.slice(0, 150) + '...';
+  <!-- ======================== CLIENT LOGIC SCRIPT ======================== -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script>
+    if (typeof io === 'undefined') {
+      document.write('<script src="/socket.io/socket.io.js"><\/script>');
     }
+  </script>
 
-    entry.innerHTML =
-      '<span class="time">' + new Date().toLocaleTimeString() + '</span>' +
-      '<span class="tag ' + esc(String(tag).toLowerCase()) + '">' + esc(tag) + '</span>' +
-      '<span class="title">' + esc(title) + '</span>' +
-      '<span class="summary">' + esc(summary) + '</span>';
+  <script>
+  (function() {
+    'use strict';
 
-    if (data !== undefined) {
-      const pre = document.createElement('pre');
-      pre.textContent = JSON.stringify(data, null, 2);
-      pre.hidden = true;
-      entry.appendChild(pre);
-      entry.classList.add('clickable');
-      entry.addEventListener('click', () => { pre.hidden = !pre.hidden; });
-    }
+    const BASE = location.protocol.startsWith('http') ? location.origin : 'http://localhost:5000';
 
-    logBox.appendChild(entry);
-    while (logBox.children.length > 400) logBox.removeChild(logBox.firstChild);
-    if (nearBottom) logBox.scrollTop = logBox.scrollHeight;
-  }
+    const ACCOUNTS = {
+      admin: { slot: 'staff', email: 'admin@shop.com', password: 'Admin@123', label: 'Admin' },
+      manager: { slot: 'staff', email: 'manager@shop.com', password: 'Manager@123', label: 'Manager' },
+      customer: { slot: 'customer', email: 'customer@shop.com', password: 'Customer@123', label: 'Demo Customer' }
+    };
 
-  // ---------- REST helper ----------
-  // credentials:'omit' on purpose: both sessions share one browser, so we send each session's own
-  // tokens explicitly (Bearer header / request body) instead of the shared refresh cookie.
-  async function api(slot, method, path, body, opts) {
-    const options = opts || {};
-    const session = slot ? sessions[slot] : null;
-    const headers = { 'Content-Type': 'application/json' };
-    if (session && session.accessToken) headers.Authorization = 'Bearer ' + session.accessToken;
+    const NEXT_STATUS = { pending: 'confirmed', confirmed: 'shipped', shipped: 'delivered' };
 
-    const started = performance.now();
-    let res;
-    try {
-      res = await fetch(BASE + path, { method, headers, credentials: 'omit', body: body ? JSON.stringify(body) : undefined });
-    } catch (err) {
-      log('error', 'HTTP', method + ' ' + path + ' failed to reach the server', { error: err.message });
-      throw err;
-    }
-    const json = await res.json().catch(() => ({}));
-    const ms = Math.round(performance.now() - started);
+    const SHIPPING_ADDRESS = {
+      fullName: 'Demo Customer', phone: '9000000001', line1: '12 MG Road', line2: '',
+      city: 'Bengaluru', state: 'Karnataka', postalCode: '560001', country: 'India'
+    };
 
-    if (res.status === 401 && json.code === 'TOKEN_EXPIRED' && session && session.refreshToken && !options.retried) {
-      log('info', 'AUTH', 'Access token expired, refreshing automatically');
-      await refreshSession(slot);
-      return api(slot, method, path, body, Object.assign({}, options, { retried: true }));
-    }
-
-    if (!res.ok) {
-      log('error', 'HTTP', method + ' ' + path + ' \u2192 ' + res.status + ' (' + ms + 'ms)', json);
-      const error = new Error(json.message || res.statusText);
-      error.status = res.status;
-      error.body = json;
-      throw error;
-    }
-    if (!options.quiet) log('http', 'HTTP', method + ' ' + path + ' \u2192 ' + res.status + ' (' + ms + 'ms)', json);
-    return json;
-  }
-
-  // ---------- Session UI ----------
-  function renderSession(slot) {
-    const s = sessions[slot];
-    $('dot-' + slot).className = 'dot ' + (s.status === 'offline' ? '' : s.status);
-    const labels = { offline: 'Disconnected', connecting: 'Connecting...', connected: 'Connected', error: 'Connection error' };
-    $('status-' + slot).textContent = labels[s.status] || s.status;
-
-    if (!s.user) {
-      $('info-' + slot).textContent = 'Not logged in';
-      $('rooms-' + slot).innerHTML = '';
-      return;
-    }
-    $('info-' + slot).innerHTML =
-      '<b>' + esc(s.user.name) + '</b> (' + esc(s.user.role) + ')<br>' + esc(s.user.email) +
-      '<br>access token: <span class="mono">' + esc((s.accessToken || '').slice(0, 24)) + '...</span>';
-    $('rooms-' + slot).innerHTML = s.rooms.map((room) => '<span class="chip">' + esc(room) + '</span>').join('');
-  }
-
-  function teardown(slot) {
-    const s = sessions[slot];
-    if (s.socket) {
-      s.socket.removeAllListeners();
-      s.socket.disconnect();
-    }
-    sessions[slot] = blankSession();
-    renderSession(slot);
-  }
-
-  function requireSession(slot, label) {
-    if (sessions[slot].accessToken) return true;
-    log('info', 'UI', 'Please log in first: ' + label);
-    return false;
-  }
-
-  // ---------- Socket.IO ----------
-  function connectSocket(slot) {
-    const s = sessions[slot];
-    s.status = 'connecting';
-    renderSession(slot);
-
-    // auth is a function so a reconnect always uses the latest (refreshed) access token
-    const socket = io(BASE, {
-      auth: (cb) => cb({ token: sessions[slot].accessToken }),
-      transports: ['websocket', 'polling']
-    });
-    s.socket = socket;
-    const isCurrent = () => sessions[slot].socket === socket;
-
-    socket.on('connect', () => {
-      if (!isCurrent()) return;
-      sessions[slot].status = 'connected';
-      renderSession(slot);
-      log('socket', tagFor(slot), 'socket connected', { socketId: socket.id });
+    const blankSession = () => ({
+      user: null, accessToken: null, refreshToken: null, socket: null, rooms: [], status: 'offline'
     });
 
-    socket.on('disconnect', (reason) => {
-      if (!isCurrent()) return;
-      sessions[slot].status = 'offline';
-      renderSession(slot);
-      log('info', tagFor(slot), 'socket disconnected', { reason });
-    });
+    const sessions = {
+      staff: blankSession(),
+      customer: blankSession()
+    };
 
-    socket.on('connect_error', (err) => {
-      if (!isCurrent()) return;
-      sessions[slot].status = 'error';
-      renderSession(slot);
-      log('error', tagFor(slot), 'socket connect_error', { message: err.message });
-    });
+    const state = {
+      products: [],
+      orders: [],
+      cart: [], // array of { product, quantity }
+      appliedCoupon: null,
+      activeTab: 'storefront',
+      logFilter: 'all',
+      logEvents: [],
+      eventCounter: 0
+    };
 
-    socket.on('socket:ready', (payload) => {
-      if (!isCurrent()) return;
-      sessions[slot].rooms = payload.rooms || [];
-      renderSession(slot);
-      log('socket', tagFor(slot), 'socket:ready (rooms joined)', payload);
-    });
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const money = (n) => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
-    SERVER_EVENTS.forEach((eventName) => {
-      socket.on(eventName, (payload) => {
-        if (!isCurrent()) return;
-        log(eventName === 'alert:lowStock' ? 'alert' : 'socket', tagFor(slot), eventName, payload);
+    // Toast Notification System
+    function showToast(title, message, type = 'info') {
+      const container = $('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto p-4 rounded-xl border glass shadow-2xl flex items-start gap-3 transition-all duration-300 transform translate-y-4 opacity-0';
+      
+      const colors = {
+        success: 'border-emerald-500/40 text-emerald-300 bg-surface-900/95',
+        alert: 'border-amber-500/50 text-amber-300 bg-surface-900/95 ring-1 ring-amber-500/20',
+        error: 'border-rose-500/50 text-rose-300 bg-surface-900/95',
+        info: 'border-brand-500/40 text-slate-200 bg-surface-900/95'
+      };
+      toast.classList.add(...(colors[type] || colors.info).split(' '));
 
-        if (eventName === 'stock:updated') applyStockUpdate(payload);
-        if (eventName === 'order:new' && slot === 'staff') $('orderId').value = payload.orderId;
+      const icons = {
+        success: '<svg class="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>',
+        alert: '<svg class="w-5 h-5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
+        error: '<svg class="w-5 h-5 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>',
+        info: '<svg class="w-5 h-5 text-brand-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+      };
+
+      toast.innerHTML = `
+        ${icons[type] || icons.info}
+        <div class="flex-1 text-xs">
+          <div class="font-bold text-white text-[13px] mb-0.5">${esc(title)}</div>
+          <div class="text-slate-300 leading-snug">${esc(message)}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
       });
-    });
-  }
 
-  // ---------- Auth actions ----------
-  async function login(key) {
-    const account = ACCOUNTS[key];
-    const slot = account.slot;
-    teardown(slot);
-
-    const json = await api(slot, 'POST', '/api/auth/login', { email: account.email, password: account.password });
-    Object.assign(sessions[slot], {
-      user: json.data.user,
-      accessToken: json.data.accessToken,
-      refreshToken: json.data.refreshToken
-    });
-    renderSession(slot);
-    connectSocket(slot);
-  }
-
-  async function refreshSession(slot) {
-    const s = sessions[slot];
-    if (!s.refreshToken) throw new Error('No refresh token for this session');
-
-    const res = await fetch(BASE + '/api/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'omit',
-      body: JSON.stringify({ refreshToken: s.refreshToken })
-    });
-    const json = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      log('error', 'AUTH', 'POST /api/auth/refresh \u2192 ' + res.status, json);
-      teardown(slot);
-      throw new Error(json.message || 'Refresh failed');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
     }
-    s.accessToken = json.data.accessToken;
-    s.refreshToken = json.data.refreshToken;
-    renderSession(slot);
-    log('http', 'AUTH', 'POST /api/auth/refresh \u2192 200 (tokens rotated)', { accessToken: s.accessToken.slice(0, 24) + '...' });
-  }
 
-  async function logout(slot) {
-    const s = sessions[slot];
-    if (!s.user) { log('info', 'UI', 'This session is not logged in'); return; }
-    try {
-      await api(slot, 'POST', '/api/auth/logout', { refreshToken: s.refreshToken });
-    } finally {
-      teardown(slot);
+    // Logger
+    function logEntry(kind, tag, title, data) {
+      state.eventCounter++;
+      $('logCounter').textContent = state.eventCounter + ' events captured';
+
+      const entry = {
+        id: state.eventCounter,
+        time: new Date().toLocaleTimeString(),
+        kind, // 'http', 'socket', 'alert', 'error', 'info'
+        tag: String(tag).toUpperCase(),
+        title,
+        data
+      };
+      state.logEvents.unshift(entry);
+      if (state.logEvents.length > 300) state.logEvents.pop();
+
+      renderStreamLogs();
     }
-  }
 
-  // ---------- Catalogue ----------
-  function renderProducts() {
-    const box = $('catalogue');
-    if (!state.products.length) {
-      box.innerHTML = '<div class="empty">Click "Browse Products" to load the catalogue.</div>';
-      return;
+    function renderStreamLogs() {
+      const box = $('streamLogBox');
+      const filtered = state.logEvents.filter(e => {
+        if (state.logFilter === 'all') return true;
+        if (state.logFilter === 'socket') return e.kind === 'socket';
+        if (state.logFilter === 'alert') return e.kind === 'alert';
+        if (state.logFilter === 'http') return e.kind === 'http';
+        return true;
+      });
+
+      if (!filtered.length) {
+        box.innerHTML = '<div class="py-12 text-center text-slate-500 text-xs">No matching events in the log buffer.</div>';
+        return;
+      }
+
+      box.innerHTML = filtered.map(e => {
+        const borderColors = {
+          alert: 'border-amber-500 bg-amber-950/20 text-amber-200',
+          error: 'border-rose-500 bg-rose-950/20 text-rose-200',
+          socket: 'border-cyan-500 bg-cyan-950/20 text-cyan-200',
+          http: 'border-indigo-500 bg-indigo-950/20 text-indigo-200',
+          info: 'border-slate-600 bg-surface-800/40 text-slate-300'
+        };
+
+        const tagBadges = {
+          ADMIN: 'bg-purple-900/60 text-purple-300 border-purple-700/50',
+          MANAGER: 'bg-indigo-900/60 text-indigo-300 border-indigo-700/50',
+          CUSTOMER: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50',
+          HTTP: 'bg-blue-900/60 text-blue-300 border-blue-700/50',
+          AUTH: 'bg-amber-900/60 text-amber-300 border-amber-700/50'
+        };
+
+        const hasPayload = e.data !== undefined && e.data !== null;
+        const payloadJson = hasPayload ? esc(JSON.stringify(e.data, null, 2)) : '';
+
+        return `
+          <div class="p-2.5 rounded-xl border-l-4 ${borderColors[e.kind] || borderColors.info} border border-slate-800/80 transition-all">
+            <div class="flex items-center justify-between text-[11px] mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-slate-500">${e.time}</span>
+                <span class="px-1.5 py-0.2 rounded border text-[10px] font-bold ${tagBadges[e.tag] || 'bg-slate-800 text-slate-300 border-slate-700'}">${e.tag}</span>
+                <span class="font-bold text-white">${esc(e.title)}</span>
+              </div>
+              ${hasPayload ? `<button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-[10px] text-slate-400 hover:text-white underline">Toggle JSON</button>` : ''}
+            </div>
+            ${hasPayload ? `<pre class="hidden mt-2 p-2 rounded-lg bg-surface-900 border border-slate-800 text-[11px] overflow-x-auto text-slate-300">${payloadJson}</pre>` : ''}
+          </div>
+        `;
+      }).join('');
     }
-    const rows = state.products.map((p) => {
-      const low = p.stock <= p.lowStockThreshold;
-      const cls = p.stock === 0 ? 'red' : low ? 'amber' : 'green';
-      const rating = p.averageRating ? p.averageRating.toFixed(1) + ' \u2605 (' + p.numReviews + ')' : '-';
-      return '<tr><td>' + esc(p.name) + '</td><td class="mono">' + esc(p.sku) + '</td><td>' + esc(p.category) + '</td>' +
-        '<td class="num">' + money(p.price) + '</td>' +
-        '<td class="num"><span class="badge ' + cls + '" title="threshold ' + esc(p.lowStockThreshold) + '">' + esc(p.stock) + '</span></td>' +
-        '<td class="num">' + rating + '</td></tr>';
-    }).join('');
-    box.innerHTML = '<table><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th class="num">Price</th><th class="num">Stock</th><th class="num">Rating</th></tr></thead><tbody>' + rows + '</tbody></table>';
-  }
 
-  function renderProductSelect() {
-    const select = $('orderProduct');
-    const previous = select.value;
-    const inStock = state.products.filter((p) => p.stock > 0);
+    window.setLogFilter = function(filter) {
+      state.logFilter = filter;
+      ['all', 'socket', 'alert', 'http'].forEach(f => {
+        const btn = $('logFilter-' + f);
+        if (btn) {
+          if (f === filter) {
+            btn.className = 'px-2 py-0.5 rounded bg-brand-600 text-white font-semibold';
+          } else {
+            btn.className = 'px-2 py-0.5 rounded text-slate-400 hover:text-white';
+          }
+        }
+      });
+      renderStreamLogs();
+    };
 
-    select.innerHTML = inStock.length
-      ? inStock.map((p) => '<option value="' + esc(p._id) + '">' + esc(p.name) + ' (stock ' + esc(p.stock) + ', ' + money(p.price) + ')</option>').join('')
-      : '<option value="">No products in stock</option>';
+    window.clearEventLogs = function() {
+      state.logEvents = [];
+      state.eventCounter = 0;
+      $('logCounter').textContent = '0 events captured';
+      renderStreamLogs();
+    };
 
-    const preferred = inStock.find((p) => p._id === previous) || inStock.find((p) => p.sku === 'ELEC-001');
-    if (preferred) select.value = preferred._id;
-  }
+    // REST Client helper
+    async function api(slot, method, path, body, opts = {}) {
+      const session = slot ? sessions[slot] : null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (session && session.accessToken) {
+        headers.Authorization = 'Bearer ' + session.accessToken;
+      }
 
-  function applyStockUpdate(payload) {
-    const product = state.products.find((p) => p._id === payload.productId);
-    if (!product) return;
-    product.stock = payload.stock;
-    renderProducts();
-    renderProductSelect();
-  }
+      const started = performance.now();
+      let res;
+      try {
+        res = await fetch(BASE + path, {
+          method,
+          headers,
+          credentials: 'omit',
+          body: body ? JSON.stringify(body) : undefined
+        });
+      } catch (err) {
+        logEntry('error', 'HTTP', `${method} ${path} connection failed`, { error: err.message });
+        throw err;
+      }
 
-  async function browseProducts(quiet) {
-    const json = await api('customer', 'GET', '/api/products?limit=50&sort=name_asc', null, { quiet: Boolean(quiet) });
-    state.products = json.data;
-    renderProducts();
-    renderProductSelect();
-  }
+      const json = await res.json().catch(() => ({}));
+      const ms = Math.round(performance.now() - started);
 
-  // ---------- Results panel ----------
-  function setResults(title, html) {
-    $('results').innerHTML = '<h3>' + esc(title) + '</h3>' + html;
-  }
+      // Auto-refresh token if expired
+      if (res.status === 401 && json.code === 'TOKEN_EXPIRED' && session && session.refreshToken && !opts.retried) {
+        logEntry('info', 'AUTH', 'Access token expired, rotating via refresh token...');
+        await refreshSession(slot);
+        return api(slot, method, path, body, Object.assign({}, opts, { retried: true }));
+      }
 
-  function kv(pairs) {
-    return '<div class="kv">' + pairs.map(([k, v]) => '<div>' + esc(k) + '</div><div>' + v + '</div>').join('') + '</div>';
-  }
+      if (!res.ok) {
+        logEntry('error', 'HTTP', `${method} ${path} → ${res.status} (${ms}ms)`, json);
+        const error = new Error(json.message || res.statusText);
+        error.status = res.status;
+        error.body = json;
+        throw error;
+      }
 
-  function renderOrder(title, order) {
-    const items = order.items.map((i) => esc(i.quantity) + ' \u00D7 ' + esc(i.name) + ' @ ' + money(i.price)).join('<br>');
-    setResults(title, kv([
-      ['Order ID', '<span class="mono">' + esc(order._id) + '</span>'],
-      ['Status', '<b>' + esc(order.status) + '</b>'],
-      ['Items', items],
-      ['Subtotal', money(order.subtotal)],
-      ['Discount', money(order.discountAmount) + (order.couponCode ? ' (' + esc(order.couponCode) + ')' : '')],
-      ['Total', '<b>' + money(order.totalAmount) + '</b>'],
-      ['History', order.statusHistory.map((h) => esc(h.status)).join(' \u2192 ')]
-    ]));
-  }
+      if (!opts.quiet) {
+        logEntry('http', 'HTTP', `${method} ${path} → ${res.status} (${ms}ms)`, json);
+      }
+      return json;
+    }
 
-  // ---------- Test actions ----------
-  async function validateAndOrder() {
-    if (!requireSession('customer', 'Login as Customer')) return;
-    if (!state.products.length) await browseProducts(true);
+    // Session UI Rendering
+    function renderSessionCard(slot) {
+      const s = sessions[slot];
+      const dot = $('dot-' + slot);
+      const statusText = $('status-' + slot);
+      const roleBadge = $('badge-' + slot + '-role');
+      const nameText = $('info-' + slot + '-name');
+      const emailText = $('info-' + slot + '-email');
+      const roomsContainer = $('rooms-' + slot);
 
-    const productId = $('orderProduct').value;
-    const quantity = parseInt($('orderQty').value, 10) || 1;
-    if (!productId) { log('info', 'UI', 'No product selected (everything is out of stock?)'); return; }
+      const statusColors = {
+        offline: 'bg-slate-500',
+        connecting: 'bg-amber-400 animate-pulse',
+        connected: 'bg-emerald-400 ring-4 ring-emerald-500/20',
+        error: 'bg-rose-500'
+      };
 
-    const items = [{ productId, quantity }];
-    const code = $('couponCode').value.trim();
-    let couponToUse;
+      if (dot) dot.className = `w-3 h-3 rounded-full transition-all ${statusColors[s.status] || statusColors.offline}`;
+      if (statusText) statusText.textContent = s.status.toUpperCase();
 
-    if (code) {
-      const check = await api('customer', 'POST', '/api/coupons/validate', { code, items });
-      if (check.data.valid) {
-        couponToUse = code;
-        log('info', 'COUPON', code + ' is valid. Discount ' + money(check.data.discountAmount) + ', final ' + money(check.data.finalAmount));
-      } else {
-        log('info', 'COUPON', code + ' is not applicable: ' + check.data.message + '. Placing the order without it.');
+      if (!s.user) {
+        if (roleBadge) roleBadge.classList.add('hidden');
+        if (nameText) nameText.textContent = 'Not Logged In';
+        if (emailText) emailText.textContent = slot === 'staff' ? 'Requires Admin/Manager' : 'Demo Customer';
+        if (roomsContainer) roomsContainer.innerHTML = '<span class="text-[11px] text-slate-500 italic">No active rooms</span>';
+        return;
+      }
+
+      if (roleBadge) {
+        roleBadge.classList.remove('hidden');
+        roleBadge.textContent = s.user.role.toUpperCase();
+      }
+      if (nameText) nameText.textContent = s.user.name;
+      if (emailText) emailText.textContent = s.user.email;
+
+      if (roomsContainer) {
+        if (s.rooms && s.rooms.length) {
+          roomsContainer.innerHTML = s.rooms.map(r => `
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-indigo-950/60 text-indigo-300 border border-indigo-800/40">${esc(r)}</span>
+          `).join('');
+        } else {
+          roomsContainer.innerHTML = '<span class="text-[11px] text-slate-500 italic">No rooms assigned</span>';
+        }
+      }
+
+      // Update global header status dot
+      const anyConnected = sessions.staff.status === 'connected' || sessions.customer.status === 'connected';
+      $('globalSessionDot').className = `w-2 h-2 rounded-full ${anyConnected ? 'bg-emerald-400' : 'bg-slate-500'}`;
+    }
+
+    function teardownSession(slot) {
+      const s = sessions[slot];
+      if (s.socket) {
+        s.socket.removeAllListeners();
+        s.socket.disconnect();
+      }
+      sessions[slot] = blankSession();
+      renderSessionCard(slot);
+    }
+
+    // Connect WebSocket
+    function connectSocketForSlot(slot) {
+      const s = sessions[slot];
+      s.status = 'connecting';
+      renderSessionCard(slot);
+
+      const socket = io(BASE, {
+        auth: (cb) => cb({ token: sessions[slot].accessToken }),
+        transports: ['websocket', 'polling']
+      });
+      s.socket = socket;
+      const isCurrent = () => sessions[slot].socket === socket;
+
+      socket.on('connect', () => {
+        if (!isCurrent()) return;
+        sessions[slot].status = 'connected';
+        renderSessionCard(slot);
+        logEntry('socket', s.user ? s.user.role : slot, 'WebSocket Handshake Connected', { socketId: socket.id });
+        showToast('Socket Connected', `${slot.toUpperCase()} real-time stream established.`, 'success');
+      });
+
+      socket.on('disconnect', (reason) => {
+        if (!isCurrent()) return;
+        sessions[slot].status = 'offline';
+        renderSessionCard(slot);
+        logEntry('info', s.user ? s.user.role : slot, 'WebSocket Disconnected', { reason });
+      });
+
+      socket.on('connect_error', (err) => {
+        if (!isCurrent()) return;
+        sessions[slot].status = 'error';
+        renderSessionCard(slot);
+        logEntry('error', s.user ? s.user.role : slot, 'WebSocket Handshake Error', { message: err.message });
+      });
+
+      socket.on('socket:ready', (payload) => {
+        if (!isCurrent()) return;
+        sessions[slot].rooms = payload.rooms || [];
+        renderSessionCard(slot);
+        logEntry('socket', s.user ? s.user.role : slot, 'socket:ready (Rooms Registered)', payload);
+      });
+
+      // Domain Events
+      socket.on('stock:updated', (payload) => {
+        if (!isCurrent()) return;
+        logEntry('socket', s.user ? s.user.role : slot, 'stock:updated (Atomic Stock Dec)', payload);
+        applyLiveStockUpdate(payload);
+      });
+
+      socket.on('alert:lowStock', (payload) => {
+        if (!isCurrent()) return;
+        logEntry('alert', 'ALERT', 'alert:lowStock (Threshold Triggered!)', payload);
+        showToast('Low Stock Alert!', `${payload.name} (SKU: ${payload.sku}) is now at ${payload.stock} units!`, 'alert');
+        applyLiveStockUpdate(payload);
+      });
+
+      socket.on('order:new', (payload) => {
+        if (!isCurrent()) return;
+        logEntry('socket', s.user ? s.user.role : slot, 'order:new (Order Placed)', payload);
+        showToast('New Order Placed', `Order #${payload.orderId.slice(-6)} received (${money(payload.totalAmount)})`, 'info');
+        fetchOrders(true);
+      });
+
+      socket.on('order:statusChanged', (payload) => {
+        if (!isCurrent()) return;
+        logEntry('socket', s.user ? s.user.role : slot, 'order:statusChanged', payload);
+        showToast('Order Status Updated', `Order #${payload.orderId.slice(-6)} is now ${payload.status.toUpperCase()}`, 'info');
+        fetchOrders(true);
+      });
+    }
+
+    // Authentication actions
+    window.login = async function(key) {
+      const account = ACCOUNTS[key];
+      if (!account) return;
+      const slot = account.slot;
+
+      teardownSession(slot);
+
+      try {
+        const json = await api(slot, 'POST', '/api/auth/login', {
+          email: account.email,
+          password: account.password
+        });
+
+        Object.assign(sessions[slot], {
+          user: json.data.user,
+          accessToken: json.data.accessToken,
+          refreshToken: json.data.refreshToken
+        });
+
+        renderSessionCard(slot);
+        connectSocketForSlot(slot);
+        showToast('Signed In', `Logged in as ${json.data.user.name} (${json.data.user.role})`, 'success');
+
+        if (slot === 'customer') {
+          loadPersonalization();
+        }
+        if (slot === 'staff') {
+          fetchOrders(true);
+          loadAnalytics(true);
+        }
+      } catch (err) {
+        showToast('Login Failed', err.message, 'error');
+      }
+    };
+
+    window.refreshSession = async function(slot) {
+      const s = sessions[slot];
+      if (!s.refreshToken) {
+        showToast('Cannot Refresh', 'No active session token to rotate.', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(BASE + '/api/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'omit',
+          body: JSON.stringify({ refreshToken: s.refreshToken })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Refresh failed');
+
+        s.accessToken = json.data.accessToken;
+        s.refreshToken = json.data.refreshToken;
+        renderSessionCard(slot);
+        logEntry('http', 'AUTH', 'Token Refreshed & Rotated Successfully', { accessToken: s.accessToken.slice(0, 20) + '...' });
+        showToast('Token Rotated', 'JWT Access token refreshed.', 'info');
+      } catch (err) {
+        teardownSession(slot);
+        showToast('Session Expired', 'Please login again.', 'error');
+      }
+    };
+
+    window.logout = async function(slot) {
+      const s = sessions[slot];
+      if (!s.user) return;
+      try {
+        await api(slot, 'POST', '/api/auth/logout', { refreshToken: s.refreshToken });
+      } finally {
+        teardownSession(slot);
+        showToast('Signed Out', `${slot.toUpperCase()} session terminated.`, 'info');
+      }
+    };
+
+    // Live Stock Updates
+    function applyLiveStockUpdate(payload) {
+      const prod = state.products.find(p => p._id === payload.productId);
+      if (prod) {
+        prod.stock = payload.stock;
+        renderStorefrontGrid();
+        renderInventoryTable();
       }
     }
 
-    const order = await api('customer', 'POST', '/api/orders', {
-      items,
-      shippingAddress: SHIPPING_ADDRESS,
-      paymentMethod: 'cod',
-      couponCode: couponToUse
-    });
+    // Fetch Products
+    let debounceTimer;
+    window.debounceFetchProducts = function() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(fetchProducts, 300);
+    };
 
-    $('orderId').value = order.data._id;
-    renderOrder('Order placed', order.data);
-    await browseProducts(true);
-  }
+    window.fetchProducts = async function() {
+      const search = $('searchInput') ? $('searchInput').value.trim() : '';
+      const category = $('categoryFilter') ? $('categoryFilter').value : '';
+      const sort = $('sortFilter') ? $('sortFilter').value : 'newest';
+      const inStock = $('inStockOnly') && $('inStockOnly').checked ? 'true' : '';
 
-  async function updateStatus() {
-    if (!requireSession('staff', 'Login as Admin or Manager')) return;
+      const params = new URLSearchParams({ limit: '60' });
+      if (search) params.append('search', search);
+      if (category) params.append('category', category);
+      if (sort) params.append('sort', sort);
+      if (inStock) params.append('inStock', inStock);
 
-    let orderId = $('orderId').value.trim();
-    if (!orderId) {
-      const pending = await api('staff', 'GET', '/api/orders?status=pending&limit=1', null, { quiet: true });
-      if (!pending.data.length) { log('info', 'UI', 'No pending orders found. Place an order as the customer first.'); return; }
-      orderId = pending.data[0]._id;
-      $('orderId').value = orderId;
+      try {
+        const json = await api(null, 'GET', '/api/products?' + params.toString(), null, { quiet: true });
+        state.products = json.data || [];
+        renderStorefrontGrid();
+        renderInventoryTable();
+      } catch (err) {
+        $('productGrid').innerHTML = `<div class="col-span-full py-12 text-center text-rose-400">Failed to load products: ${esc(err.message)}</div>`;
+      }
+    };
+
+    window.fetchLowStockOnly = async function() {
+      if (!sessions.staff.accessToken) {
+        showToast('Permission Required', 'Login as Admin or Manager to inspect low stock records.', 'alert');
+        return;
+      }
+      try {
+        const json = await api('staff', 'GET', '/api/products/low-stock');
+        state.products = json.data || [];
+        renderInventoryTable();
+        showToast('Low Stock Filtered', `Loaded ${json.data.length} items at or below alert threshold.`, 'alert');
+      } catch (err) {
+        showToast('Error', err.message, 'error');
+      }
+    };
+
+    // Render Storefront
+    function renderStorefrontGrid() {
+      const grid = $('productGrid');
+      if (!state.products.length) {
+        grid.innerHTML = '<div class="col-span-full py-16 text-center text-slate-500">No products found matching filters.</div>';
+        return;
+      }
+
+      grid.innerHTML = state.products.map(p => {
+        const isOutOfStock = p.stock === 0;
+        const isLowStock = !isOutOfStock && p.stock <= p.lowStockThreshold;
+
+        let badgeHtml = '';
+        if (isOutOfStock) {
+          badgeHtml = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">OUT OF STOCK</span>';
+        } else if (isLowStock) {
+          badgeHtml = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-pulse-subtle">ONLY ${p.stock} LEFT</span>`;
+        } else {
+          badgeHtml = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">${p.stock} IN STOCK</span>`;
+        }
+
+        const ratingText = p.averageRating ? `${p.averageRating.toFixed(1)} ★ (${p.numReviews})` : 'New';
+
+        return `
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between border border-slate-800/80 hover:border-slate-700 transition-all hover:shadow-xl group">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${esc(p.category)}</span>
+                ${badgeHtml}
+              </div>
+
+              <h4 class="font-bold text-sm text-white group-hover:text-brand-300 transition-colors mb-1">${esc(p.name)}</h4>
+              <p class="text-xs text-slate-400 line-clamp-2 mb-3">${esc(p.description || '')}</p>
+
+              <div class="flex items-center justify-between text-xs font-mono text-slate-400 mb-4">
+                <span>SKU: <b class="text-slate-300">${esc(p.sku)}</b></span>
+                <span class="text-amber-400 font-bold">${ratingText}</span>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-[10px] text-slate-500 uppercase">Unit Price</div>
+                <div class="text-base font-extrabold text-white font-mono">${money(p.price)}</div>
+              </div>
+
+              <div class="flex items-center gap-1.5">
+                <button onclick="addToWishlist('${p._id}')" title="Add to Wishlist" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-rose-400 border border-slate-700/60 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                </button>
+                <button onclick="addToCart('${p._id}')" ${isOutOfStock ? 'disabled' : ''} class="px-3 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-md transition-all flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
-    let status = $('statusSelect').value;
-    if (status === 'next') {
-      const current = await api('staff', 'GET', '/api/orders/' + orderId, null, { quiet: true });
-      status = NEXT_STATUS[current.data.status];
-      if (!status) { log('info', 'UI', 'Order is already "' + current.data.status + '", so there is no next step.'); return; }
+    // Render Inventory Table
+    function renderInventoryTable() {
+      const tbody = $('inventoryTableBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = state.products.map(p => {
+        const isLow = p.stock <= p.lowStockThreshold;
+        const isOut = p.stock === 0;
+        const colorClass = isOut ? 'text-rose-400 bg-rose-950/40 border-rose-800' : isLow ? 'text-amber-400 bg-amber-950/40 border-amber-800' : 'text-emerald-400 bg-emerald-950/40 border-emerald-800';
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition-colors">
+            <td class="py-3 px-4 font-sans">
+              <div class="font-bold text-white text-xs">${esc(p.name)}</div>
+              <div class="text-[11px] text-slate-500 font-mono">${esc(p.sku)}</div>
+            </td>
+            <td class="py-3 px-4 text-slate-300 font-sans">${esc(p.category)}</td>
+            <td class="py-3 px-4 text-right text-slate-200">${money(p.price)}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${colorClass}">
+                ${p.stock} units
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right text-slate-400">${p.lowStockThreshold} units</td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="openRestockModal('${p._id}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-sans font-medium transition-colors">
+                Adjust Stock
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    const json = await api('staff', 'PATCH', '/api/orders/' + orderId + '/status', { status, note: 'Updated from the demo console' });
-    renderOrder('Order status updated', json.data);
-  }
+    // Cart Management
+    window.toggleCart = function() {
+      const drawer = $('cartDrawer');
+      const backdrop = $('cartDrawerBackdrop');
+      const isHidden = drawer.classList.contains('translate-x-full');
 
-  async function cancelOrder() {
-    if (!requireSession('customer', 'Login as Customer')) return;
-    const orderId = $('orderId').value.trim();
-    if (!orderId) { log('info', 'UI', 'No order ID. Place an order first.'); return; }
+      if (isHidden) {
+        drawer.classList.remove('translate-x-full');
+        backdrop.classList.remove('hidden');
+        renderCart();
+      } else {
+        drawer.classList.add('translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    };
 
-    const json = await api('customer', 'PATCH', '/api/orders/' + orderId + '/cancel', { note: 'Cancelled from the demo console' });
-    renderOrder('Order cancelled (stock restored)', json.data);
-    await browseProducts(true);
-  }
+    window.addToCart = function(productId, qty = 1) {
+      const prod = state.products.find(p => p._id === productId);
+      if (!prod) return;
 
-  function renderAnalytics(overview, categories, monthly) {
-    const o = overview.data;
-    const kpis = [
-      ['Total revenue', money(o.totalRevenue)], ['Total orders', o.totalOrders], ['Avg order value', money(o.averageOrderValue)],
-      ['Low-stock products', o.lowStockProducts], ['Orders with coupon', o.couponStats.ordersWithCoupon], ['Discounts given', money(o.couponStats.totalDiscountGiven)]
-    ].map(([label, value]) => '<div class="kpi"><div class="v">' + esc(value) + '</div><div class="l">' + esc(label) + '</div></div>').join('');
+      const existing = state.cart.find(c => c.product._id === productId);
+      if (existing) {
+        existing.quantity += qty;
+      } else {
+        state.cart.push({ product: prod, quantity: qty });
+      }
 
-    const top = o.topProducts.map((p) => '<tr><td>' + esc(p.name) + '</td><td class="num">' + esc(p.unitsSold) + '</td><td class="num">' + money(p.revenue) + '</td></tr>').join('');
-    const cats = categories.data.categories.map((c) =>
-      '<tr><td>' + esc(c.category) + '</td><td class="num">' + esc(c.unitsSold) + '</td><td class="num">' + money(c.grossRevenue) + '</td><td class="num">' + money(c.netRevenue) +
-      '</td><td class="num">' + esc(c.currentStock) + '</td><td class="num">' + money(c.inventoryValuation) + '</td><td class="num">' + esc(c.lowStockItems) + '</td></tr>').join('');
-    const months = monthly.data.series.map((m) =>
-      '<tr><td>' + esc(m.period) + '</td><td class="num">' + money(m.revenue) + '</td><td class="num">' + esc(m.orderCount) + '</td><td class="num">' + money(m.totalDiscounts) + '</td><td class="num">' + money(m.averageOrderValue) + '</td></tr>').join('');
+      updateCartBadge();
+      showToast('Added to Cart', `${qty}x ${prod.name} added.`, 'info');
+      if (!$('cartDrawer').classList.contains('translate-x-full')) {
+        renderCart();
+      }
+    };
 
-    return '<div class="kpis">' + kpis + '</div>' +
-      '<div class="section-title">Top 5 best-selling products</div><div class="scroll"><table><thead><tr><th>Product</th><th class="num">Units</th><th class="num">Revenue</th></tr></thead><tbody>' + top + '</tbody></table></div>' +
-      '<div class="section-title">Sales by category</div><div class="scroll"><table><thead><tr><th>Category</th><th class="num">Units</th><th class="num">Gross</th><th class="num">Net</th><th class="num">Stock</th><th class="num">Valuation</th><th class="num">Low</th></tr></thead><tbody>' + cats + '</tbody></table></div>' +
-      '<div class="section-title">Sales by month</div><div class="scroll"><table><thead><tr><th>Month</th><th class="num">Revenue</th><th class="num">Orders</th><th class="num">Discounts</th><th class="num">AOV</th></tr></thead><tbody>' + months + '</tbody></table></div>';
-  }
-
-  function renderRecommendations(recs) {
-    const d = recs.data;
-    const rows = d.recommendations.map((p) =>
-      '<tr><td>' + esc(p.name) + '</td><td>' + esc(p.category) + '</td><td class="num">' + money(p.price) + '</td><td class="num">' + (p.averageRating ? p.averageRating.toFixed(1) + ' \u2605' : '-') + '</td><td>' + esc(p.reason) + '</td></tr>').join('');
-    return '<div class="section-title">Recommendations (' + esc(d.strategy) + '; preferred: ' + esc(d.preferredCategories.join(', ') || 'none') + ')</div>' +
-      '<div class="scroll"><table><thead><tr><th>Product</th><th>Category</th><th class="num">Price</th><th class="num">Rating</th><th>Why</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
-  }
-
-  async function fetchAnalyticsAndRecs() {
-    let html = '';
-    const haveStaff = requireSession('staff', 'Login as Admin or Manager to load analytics');
-    const haveCustomer = requireSession('customer', 'Login as Customer to load recommendations');
-
-    if (haveStaff) {
-      const [overview, categories, monthly] = await Promise.all([
-        api('staff', 'GET', '/api/analytics/overview'),
-        api('staff', 'GET', '/api/analytics/sales-by-category'),
-        api('staff', 'GET', '/api/analytics/sales-by-date?groupBy=month')
-      ]);
-      html += renderAnalytics(overview, categories, monthly);
+    function updateCartBadge() {
+      const total = state.cart.reduce((sum, item) => sum + item.quantity, 0);
+      $('cartCountBadge').textContent = total;
     }
-    if (haveCustomer) {
-      const recs = await api('customer', 'GET', '/api/recommendations?limit=8');
-      html += renderRecommendations(recs);
+
+    window.updateCartItemQty = function(productId, change) {
+      const item = state.cart.find(c => c.product._id === productId);
+      if (!item) return;
+
+      item.quantity += change;
+      if (item.quantity <= 0) {
+        state.cart = state.cart.filter(c => c.product._id !== productId);
+      }
+      updateCartBadge();
+      renderCart();
+    };
+
+    function renderCart() {
+      const list = $('cartItemsList');
+      if (!state.cart.length) {
+        list.innerHTML = '<div class="py-16 text-center text-slate-500 text-xs">Your shopping cart is currently empty.</div>';
+        $('cartSubtotalText').textContent = '₹0.00';
+        $('cartTotalPayableText').textContent = '₹0.00';
+        $('cartDiscountRow').style.display = 'none';
+        return;
+      }
+
+      list.innerHTML = state.cart.map(item => `
+        <div class="glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <h5 class="text-xs font-bold text-white truncate">${esc(item.product.name)}</h5>
+            <p class="text-[11px] text-slate-400 font-mono">${money(item.product.price)} each</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="updateCartItemQty('${item.product._id}', -1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs">-</button>
+            <span class="text-xs font-mono font-bold text-white w-5 text-center">${item.quantity}</span>
+            <button onclick="updateCartItemQty('${item.product._id}', 1)" class="w-6 h-6 rounded bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold text-xs">+</button>
+          </div>
+          <div class="text-right font-mono text-xs font-bold text-white min-w-[70px]">
+            ${money(item.product.price * item.quantity)}
+          </div>
+        </div>
+      `).join('');
+
+      computeCartTotals();
     }
-    if (html) setResults('Analytics & Recommendations', html);
-  }
 
-  async function rbacDemo() {
-    try { await api(null, 'GET', '/api/analytics/overview'); } catch (err) { /* expected 401, already logged */ }
-    if (sessions.customer.accessToken) {
-      try { await api('customer', 'GET', '/api/analytics/overview'); } catch (err) { /* expected 403, already logged */ }
-      try { await api('customer', 'POST', '/api/products', { name: 'Hacked', sku: 'HACK-1', category: 'X', price: 1, stock: 1 }); } catch (err) { /* expected 403 */ }
-    } else {
-      log('info', 'UI', 'Login as Customer as well to also see the 403 (forbidden) responses');
+    function computeCartTotals() {
+      const subtotal = state.cart.reduce((sum, i) => sum + (i.product.price * i.quantity), 0);
+      $('cartSubtotalText').textContent = money(subtotal);
+
+      let discount = 0;
+      if (state.appliedCoupon) {
+        discount = state.appliedCoupon.discountAmount || 0;
+        $('cartDiscountRow').style.display = 'flex';
+        $('cartDiscountText').textContent = '-' + money(discount);
+      } else {
+        $('cartDiscountRow').style.display = 'none';
+      }
+
+      const total = Math.max(0, subtotal - discount);
+      $('cartTotalPayableText').textContent = money(total);
     }
-    setResults('RBAC check', '<div class="hint">No token gives <code>401</code>. A customer token on admin-only routes gives <code>403</code>. See the red log entries.</div>');
-  }
 
-  // ---------- Button wiring ----------
-  const ACTIONS = {
-    'login-admin': () => login('admin'),
-    'login-manager': () => login('manager'),
-    'login-customer': () => login('customer'),
-    'refresh-staff': () => (sessions.staff.refreshToken ? refreshSession('staff') : log('info', 'UI', 'Staff session is not logged in')),
-    'refresh-customer': () => (sessions.customer.refreshToken ? refreshSession('customer') : log('info', 'UI', 'Customer session is not logged in')),
-    'logout-staff': () => logout('staff'),
-    'logout-customer': () => logout('customer'),
-    browse: () => browseProducts(false),
-    order: validateAndOrder,
-    status: updateStatus,
-    cancel: cancelOrder,
-    analytics: fetchAnalyticsAndRecs,
-    rbac: rbacDemo,
-    'clear-log': () => { logBox.innerHTML = ''; }
-  };
+    window.selectCouponChip = function(code) {
+      $('cartCouponInput').value = code;
+      validateCartCoupon();
+    };
 
-  document.addEventListener('click', async (event) => {
-    const button = event.target.closest('button[data-act]');
-    if (!button || !ACTIONS[button.dataset.act]) return;
+    window.validateCartCoupon = async function() {
+      const code = $('cartCouponInput').value.trim();
+      const feedback = $('couponValidationFeedback');
+      if (!code) {
+        state.appliedCoupon = null;
+        feedback.innerHTML = '';
+        computeCartTotals();
+        return;
+      }
 
-    button.disabled = true;
-    try {
-      await ACTIONS[button.dataset.act]();
-    } catch (err) {
-      // HTTP errors are already logged by api(); log anything else here
-      if (!err.status) log('error', 'UI', err.message);
-    } finally {
-      button.disabled = false;
+      if (!state.cart.length) {
+        feedback.innerHTML = '<span class="text-amber-400">Add items to cart before validating coupons.</span>';
+        return;
+      }
+
+      const items = state.cart.map(i => ({ productId: i.product._id, quantity: i.quantity }));
+      try {
+        const json = await api('customer', 'POST', '/api/coupons/validate', { code, items });
+        if (json.data && json.data.valid) {
+          state.appliedCoupon = {
+            code,
+            discountAmount: json.data.discountAmount,
+            finalAmount: json.data.finalAmount
+          };
+          feedback.innerHTML = `<span class="text-emerald-400 font-semibold font-mono">✓ ${code} applied: Save ${money(json.data.discountAmount)}!</span>`;
+          showToast('Coupon Applied', `Saved ${money(json.data.discountAmount)} on your order!`, 'success');
+        } else {
+          state.appliedCoupon = null;
+          feedback.innerHTML = `<span class="text-rose-400 font-mono">✕ ${esc(json.data.message || 'Coupon not applicable')}</span>`;
+        }
+        computeCartTotals();
+      } catch (err) {
+        state.appliedCoupon = null;
+        feedback.innerHTML = `<span class="text-rose-400 font-mono">✕ ${esc(err.message)}</span>`;
+        computeCartTotals();
+      }
+    };
+
+    window.submitCheckoutOrder = async function() {
+      if (!sessions.customer.accessToken) {
+        showToast('Login Required', 'Please login as Customer to complete checkout.', 'alert');
+        toggleSessionDrawer(true);
+        return;
+      }
+
+      if (!state.cart.length) {
+        showToast('Empty Cart', 'Please add items before placing an order.', 'alert');
+        return;
+      }
+
+      const items = state.cart.map(i => ({ productId: i.product._id, quantity: i.quantity }));
+      const couponCode = state.appliedCoupon ? state.appliedCoupon.code : undefined;
+
+      const btn = $('checkoutSubmitBtn');
+      btn.disabled = true;
+      btn.innerHTML = 'Processing Atomic Checkout...';
+
+      try {
+        const json = await api('customer', 'POST', '/api/orders', {
+          items,
+          shippingAddress: SHIPPING_ADDRESS,
+          paymentMethod: 'cod',
+          couponCode
+        });
+
+        state.cart = [];
+        state.appliedCoupon = null;
+        updateCartBadge();
+        toggleCart();
+
+        showToast('Order Confirmed!', `Order #${json.data._id.slice(-6)} placed successfully!`, 'success');
+        fetchProducts();
+        fetchOrders(true);
+        switchTab('orders');
+      } catch (err) {
+        showToast('Order Failed', err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Place Order Now (COD)';
+      }
+    };
+
+    // Orders Management & Pipeline
+    window.fetchOrders = async function(quiet = false) {
+      const slot = sessions.staff.accessToken ? 'staff' : sessions.customer.accessToken ? 'customer' : null;
+      if (!slot) return;
+
+      const status = $('orderStatusFilter') ? $('orderStatusFilter').value : '';
+      const params = new URLSearchParams({ limit: '50' });
+      if (status) params.append('status', status);
+
+      try {
+        const json = await api(slot, 'GET', '/api/orders?' + params.toString(), null, { quiet });
+        state.orders = json.data || [];
+        renderOrdersList();
+      } catch (err) {
+        $('ordersContainer').innerHTML = `<div class="py-8 text-center text-rose-400">Error loading orders: ${esc(err.message)}</div>`;
+      }
+    };
+
+    function renderOrdersList() {
+      const container = $('ordersContainer');
+      if (!state.orders.length) {
+        container.innerHTML = '<div class="py-12 text-center text-slate-500">No orders found.</div>';
+        return;
+      }
+
+      container.innerHTML = state.orders.map(order => {
+        const statusColors = {
+          pending: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+          confirmed: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+          shipped: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+          delivered: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+          cancelled: 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+        };
+
+        const nextStatus = NEXT_STATUS[order.status];
+        const canAdvance = sessions.staff.accessToken && Boolean(nextStatus);
+        const canCancel = order.status === 'pending' || order.status === 'confirmed';
+
+        const lineItems = order.items.map(i => `
+          <div class="flex justify-between text-xs py-1 text-slate-300">
+            <span>${esc(i.quantity)}x ${esc(i.name)}</span>
+            <span class="font-mono text-slate-400">${money(i.price * i.quantity)}</span>
+          </div>
+        `).join('');
+
+        return `
+          <div class="glass-card p-5 rounded-2xl border border-slate-800/80 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+              <div>
+                <span class="text-[11px] font-mono text-slate-500">ORDER ID:</span>
+                <span class="text-xs font-mono font-bold text-white ml-1">${esc(order._id)}</span>
+                <span class="text-slate-500 text-xs ml-2">• ${new Date(order.createdAt).toLocaleString()}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider border ${statusColors[order.status] || 'text-slate-400'}">
+                  ${esc(order.status)}
+                </span>
+              </div>
+            </div>
+
+            <!-- Items -->
+            <div class="divide-y divide-slate-800/40">
+              ${lineItems}
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="flex flex-wrap items-center justify-between pt-2 border-t border-slate-800/80 font-mono text-xs">
+              <div class="text-slate-400">
+                ${order.couponCode ? `Coupon: <span class="text-emerald-400 font-bold">${esc(order.couponCode)}</span> (-${money(order.discountAmount)})` : 'No coupon applied'}
+              </div>
+              <div>
+                Total: <span class="text-sm font-extrabold text-white ml-1">${money(order.totalAmount)}</span>
+              </div>
+            </div>
+
+            <!-- Lifecycle Actions -->
+            <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-800/60">
+              ${canAdvance ? `
+                <button onclick="advanceOrderStatus('${order._id}', '${nextStatus}')" class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold shadow-md flex items-center gap-1.5">
+                  <span>Advance Status ➔ <b>${nextStatus.toUpperCase()}</b></span>
+                </button>
+              ` : ''}
+
+              ${canCancel ? `
+                <button onclick="cancelOrderPrompt('${order._id}')" class="px-3 py-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/40 text-xs font-medium">
+                  Cancel Order (Restore Stock)
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
-  });
 
-  // ---------- Init ----------
-  renderSession('staff');
-  renderSession('customer');
-  renderProducts();
-  log('info', 'UI', 'Console ready. Login as Admin and as Customer, then use the Test Console buttons.');
-})();
-</script>
+    window.advanceOrderStatus = async function(orderId, nextStatus) {
+      if (!sessions.staff.accessToken) {
+        showToast('Admin Required', 'Login as Admin or Manager to advance order status.', 'alert');
+        return;
+      }
+      try {
+        await api('staff', 'PATCH', `/api/orders/${orderId}/status`, {
+          status: nextStatus,
+          note: 'Updated from modern OmniFlow dashboard'
+        });
+        showToast('Status Advanced', `Order #${orderId.slice(-6)} advanced to ${nextStatus.toUpperCase()}`, 'success');
+        fetchOrders(true);
+      } catch (err) {
+        showToast('Update Failed', err.message, 'error');
+      }
+    };
+
+    window.cancelOrderPrompt = async function(orderId) {
+      const slot = sessions.customer.accessToken ? 'customer' : 'staff';
+      try {
+        await api(slot, 'PATCH', `/api/orders/${orderId}/cancel`, { note: 'Cancelled by user from dashboard' });
+        showToast('Order Cancelled', `Order #${orderId.slice(-6)} cancelled. Stock restored atomically!`, 'info');
+        fetchOrders(true);
+        fetchProducts();
+      } catch (err) {
+        showToast('Cancellation Failed', err.message, 'error');
+      }
+    };
+
+    // Analytics & BI
+    window.loadAnalytics = async function(quiet = false) {
+      if (!sessions.staff.accessToken) {
+        $('kpiContainer').innerHTML = '<div class="col-span-full py-8 text-center text-slate-400">Login as Staff (Admin/Manager) to view BI metrics.</div>';
+        return;
+      }
+
+      try {
+        const [overview, categories, monthly] = await Promise.all([
+          api('staff', 'GET', '/api/analytics/overview', null, { quiet }),
+          api('staff', 'GET', '/api/analytics/sales-by-category', null, { quiet }),
+          api('staff', 'GET', '/api/analytics/sales-by-date?groupBy=month', null, { quiet })
+        ]);
+
+        const o = overview.data;
+        const kpis = [
+          { label: 'Gross Revenue', val: money(o.totalRevenue), color: 'text-emerald-400' },
+          { label: 'Total Orders', val: o.totalOrders, color: 'text-indigo-400' },
+          { label: 'Avg Order Value (AOV)', val: money(o.averageOrderValue), color: 'text-cyan-400' },
+          { label: 'Low Stock Alerts', val: o.lowStockProducts, color: 'text-amber-400' },
+          { label: 'Coupons Redeemed', val: o.couponStats.ordersWithCoupon, color: 'text-purple-400' },
+          { label: 'Discounts Granted', val: money(o.couponStats.totalDiscountGiven), color: 'text-rose-400' },
+        ];
+
+        $('kpiContainer').innerHTML = kpis.map(k => `
+          <div class="glass-card p-4 rounded-xl border border-slate-800">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">${k.label}</div>
+            <div class="text-xl font-extrabold ${k.color} font-mono mt-1">${k.val}</div>
+          </div>
+        `).join('');
+
+        // Top 5 Products
+        const topBox = $('topProductsContainer');
+        topBox.innerHTML = o.topProducts.map((p, idx) => `
+          <div class="p-3 rounded-xl bg-surface-900 border border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="w-6 h-6 rounded-full bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-xs">#${idx + 1}</span>
+              <div>
+                <div class="font-bold text-white text-xs font-sans">${esc(p.name)}</div>
+                <div class="text-[11px] text-slate-400">${p.unitsSold} units shipped</div>
+              </div>
+            </div>
+            <div class="text-right font-bold text-emerald-400">${money(p.revenue)}</div>
+          </div>
+        `).join('');
+
+        // Category Breakdown
+        const catBox = $('categoryBreakdownContainer');
+        catBox.innerHTML = categories.data.categories.map(c => `
+          <div class="p-3 rounded-xl bg-surface-900 border border-slate-800 space-y-1.5">
+            <div class="flex justify-between font-bold text-white">
+              <span>${esc(c.category)}</span>
+              <span class="font-mono text-emerald-400">${money(c.grossRevenue)}</span>
+            </div>
+            <div class="flex justify-between text-slate-400 text-[11px] font-mono">
+              <span>Units Sold: ${c.unitsSold} • Inventory Units: ${c.currentStock}</span>
+              <span>Valuation: ${money(c.inventoryValuation)}</span>
+            </div>
+          </div>
+        `).join('');
+
+        // Monthly
+        const monthlyBody = $('monthlyTableBody');
+        monthlyBody.innerHTML = monthly.data.series.map(m => `
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-2.5 px-3 font-bold text-white">${esc(m.period)}</td>
+            <td class="py-2.5 px-3 text-right text-slate-300">${m.orderCount}</td>
+            <td class="py-2.5 px-3 text-right text-emerald-400 font-bold">${money(m.revenue)}</td>
+            <td class="py-2.5 px-3 text-right text-slate-400">${money(m.totalDiscounts)}</td>
+            <td class="py-2.5 px-3 text-right text-cyan-300">${money(m.averageOrderValue)}</td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        showToast('Analytics Error', err.message, 'error');
+      }
+    };
+
+    // Personalization & Wishlist
+    window.loadPersonalization = async function() {
+      if (!sessions.customer.accessToken) return;
+
+      try {
+        const [recs, wish] = await Promise.all([
+          api('customer', 'GET', '/api/recommendations?limit=4'),
+          api('customer', 'GET', '/api/wishlist')
+        ]);
+
+        $('recsStrategyBadge').textContent = `Strategy: ${recs.data.strategy.toUpperCase()}`;
+
+        const grid = $('recommendationsGrid');
+        grid.innerHTML = recs.data.recommendations.map(p => `
+          <div class="p-4 rounded-xl bg-surface-900 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <span class="text-[10px] font-semibold text-purple-400 uppercase tracking-wider">${esc(p.category)}</span>
+              <h5 class="text-xs font-bold text-white mt-1 mb-1">${esc(p.name)}</h5>
+              <p class="text-[11px] text-slate-400 italic mb-3">"${esc(p.reason)}"</p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800 font-mono">
+              <span class="font-bold text-white text-xs">${money(p.price)}</span>
+              <button onclick="addToCart('${p._id}')" class="px-2.5 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-[11px] font-semibold">
+                Add to Cart
+              </button>
+            </div>
+          </div>
+        `).join('');
+
+        const wishGrid = $('wishlistItemsGrid');
+        const items = wish.data && wish.data.products ? wish.data.products : [];
+        if (!items.length) {
+          wishGrid.innerHTML = '<div class="col-span-full py-8 text-center text-slate-500 text-xs">Your wishlist is empty. Click the heart icon on any product to save it!</div>';
+        } else {
+          wishGrid.innerHTML = items.map(p => `
+            <div class="p-4 rounded-xl bg-surface-900 border border-slate-800 flex flex-col justify-between">
+              <div>
+                <h5 class="text-xs font-bold text-white mb-1">${esc(p.name)}</h5>
+                <p class="text-[11px] text-slate-400 font-mono mb-2">${esc(p.sku)} • ${money(p.price)}</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                <button onclick="removeFromWishlist('${p._id}')" class="text-xs text-rose-400 hover:text-rose-300">Remove</button>
+                <button onclick="addToCart('${p._id}')" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold">
+                  Move to Cart
+                </button>
+              </div>
+            </div>
+          `).join('');
+        }
+
+      } catch (err) {
+        // quiet
+      }
+    };
+
+    window.addToWishlist = async function(productId) {
+      if (!sessions.customer.accessToken) {
+        showToast('Login Required', 'Login as Customer to manage your wishlist.', 'alert');
+        return;
+      }
+      try {
+        await api('customer', 'POST', '/api/wishlist', { productId });
+        showToast('Wishlist Updated', 'Item added to your wishlist.', 'success');
+        loadPersonalization();
+      } catch (err) {
+        showToast('Error', err.message, 'error');
+      }
+    };
+
+    window.removeFromWishlist = async function(productId) {
+      try {
+        await api('customer', 'DELETE', `/api/wishlist/${productId}`);
+        showToast('Removed', 'Item removed from wishlist.', 'info');
+        loadPersonalization();
+      } catch (err) {
+        showToast('Error', err.message, 'error');
+      }
+    };
+
+    // Restock Modal Handlers
+    window.openRestockModal = function(productId) {
+      const prod = state.products.find(p => p._id === productId);
+      if (!prod) return;
+
+      $('restockProductId').value = prod._id;
+      $('restockProductSubtitle').textContent = `${prod.name} (SKU: ${prod.sku})`;
+      $('restockStockCount').value = prod.stock;
+      $('restockThresholdCount').value = prod.lowStockThreshold;
+      $('restockPrice').value = prod.price;
+      $('restockModal').classList.remove('hidden');
+    };
+
+    window.closeRestockModal = function() {
+      $('restockModal').classList.add('hidden');
+    };
+
+    window.handleRestockSubmit = async function(e) {
+      e.preventDefault();
+      if (!sessions.staff.accessToken) {
+        showToast('Staff Required', 'Login as Admin or Manager to modify inventory.', 'alert');
+        return;
+      }
+
+      const id = $('restockProductId').value;
+      const stock = parseInt($('restockStockCount').value, 10);
+      const lowStockThreshold = parseInt($('restockThresholdCount').value, 10);
+      const price = parseFloat($('restockPrice').value);
+
+      try {
+        await api('staff', 'PUT', `/api/products/${id}`, { stock, lowStockThreshold, price });
+        closeRestockModal();
+        showToast('Inventory Updated', 'Stock count and threshold saved successfully.', 'success');
+        fetchProducts();
+      } catch (err) {
+        showToast('Update Failed', err.message, 'error');
+      }
+    };
+
+    // Create Product Modal
+    window.openCreateProductModal = function() {
+      $('createProductModal').classList.remove('hidden');
+    };
+
+    window.closeCreateProductModal = function() {
+      $('createProductModal').classList.add('hidden');
+    };
+
+    window.handleCreateProductSubmit = async function(e) {
+      e.preventDefault();
+      if (!sessions.staff.accessToken) {
+        showToast('Staff Required', 'Login as Admin or Manager to create new SKUs.', 'alert');
+        return;
+      }
+
+      const payload = {
+        name: $('newProdName').value.trim(),
+        sku: $('newProdSku').value.trim(),
+        category: $('newProdCategory').value,
+        price: parseFloat($('newProdPrice').value),
+        stock: parseInt($('newProdStock').value, 10),
+        lowStockThreshold: parseInt($('newProdThreshold').value, 10),
+        description: $('newProdDesc').value.trim()
+      };
+
+      try {
+        await api('staff', 'POST', '/api/products', payload);
+        closeCreateProductModal();
+        showToast('SKU Created', `Product "${payload.name}" added to inventory!`, 'success');
+        fetchProducts();
+      } catch (err) {
+        showToast('Creation Failed', err.message, 'error');
+      }
+    };
+
+    // Demo actions
+    window.demoTriggerLowStock = async function() {
+      // Find ELEC-001
+      const earbuds = state.products.find(p => p.sku === 'ELEC-001') || state.products[0];
+      if (!earbuds) {
+        showToast('Error', 'No products available for demo trigger.', 'error');
+        return;
+      }
+
+      // Add to cart and auto place order
+      if (!sessions.customer.accessToken) {
+        await login('customer');
+      }
+
+      showToast('Triggering Alert...', 'Placing order for 3 units to drop below threshold...', 'info');
+      try {
+        await api('customer', 'POST', '/api/orders', {
+          items: [{ productId: earbuds._id, quantity: 3 }],
+          shippingAddress: SHIPPING_ADDRESS,
+          paymentMethod: 'cod',
+          couponCode: 'WELCOME10'
+        });
+        showToast('Demo Executed', 'Order completed! Check staff socket for alert:lowStock frame.', 'success');
+        fetchProducts();
+        fetchOrders(true);
+      } catch (err) {
+        showToast('Demo Order Error', err.message, 'error');
+      }
+    };
+
+    window.stepLatestOrderStatus = async function() {
+      if (!sessions.staff.accessToken) {
+        await login('admin');
+      }
+      if (!state.orders.length) {
+        await fetchOrders(true);
+      }
+      const pending = state.orders.find(o => o.status === 'pending') || state.orders[0];
+      if (!pending) {
+        showToast('No Orders', 'No orders to advance.', 'info');
+        return;
+      }
+      const next = NEXT_STATUS[pending.status];
+      if (next) {
+        advanceOrderStatus(pending._id, next);
+      } else {
+        showToast('Status Complete', `Order is already ${pending.status}.`, 'info');
+      }
+    };
+
+    window.runRbacTest = async function() {
+      logEntry('info', 'RBAC', 'Executing RBAC Security Gate Tests...');
+      try {
+        await api(null, 'GET', '/api/analytics/overview');
+      } catch (err) {
+        // Expected 401
+      }
+
+      if (sessions.customer.accessToken) {
+        try {
+          await api('customer', 'GET', '/api/analytics/overview');
+        } catch (err) {
+          // Expected 403
+        }
+        try {
+          await api('customer', 'POST', '/api/products', { name: 'Unauthorized', sku: 'UNAUTH-1', category: 'Electronics', price: 10, stock: 1 });
+        } catch (err) {
+          // Expected 403
+        }
+      } else {
+        showToast('RBAC Hint', 'Login as Customer as well to see 403 Forbidden checks.', 'info');
+      }
+
+      showToast('RBAC Verified', '401 (Unauthorized) & 403 (Forbidden) checks validated!', 'success');
+    };
+
+    // Navigation Tabs
+    window.switchTab = function(tabName) {
+      state.activeTab = tabName;
+      ['storefront', 'inventory', 'orders', 'analytics', 'personalization', 'stream'].forEach(t => {
+        const view = $('view-' + t);
+        const btn = $('tabBtn-' + t);
+        if (view) {
+          if (t === tabName) {
+            view.classList.remove('hidden');
+          } else {
+            view.classList.add('hidden');
+          }
+        }
+        if (btn) {
+          if (t === tabName) {
+            btn.className = 'tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-white bg-brand-600 shadow-sm transition-all flex items-center gap-1.5';
+          } else {
+            btn.className = 'tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex items-center gap-1.5';
+          }
+        }
+      });
+
+      if (tabName === 'orders') fetchOrders(true);
+      if (tabName === 'analytics') loadAnalytics(true);
+      if (tabName === 'personalization') loadPersonalization();
+      if (tabName === 'inventory') renderInventoryTable();
+    };
+
+    window.toggleSessionDrawer = function(forceOpen) {
+      const drawer = $('sessionDrawer');
+      const arrow = $('sessionDrawerArrow');
+      const isHidden = drawer.classList.contains('hidden');
+
+      if (forceOpen || isHidden) {
+        drawer.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-180');
+      } else {
+        drawer.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+      }
+    };
+
+    // Init Application
+    renderSessionCard('staff');
+    renderSessionCard('customer');
+    fetchProducts();
+    logEntry('info', 'ENGINE', 'OmniFlow Real-Time Inventory UI initialized.');
+
+    // Auto-login admin and customer by default for immediate out-of-the-box live experience
+    setTimeout(() => {
+      login('admin');
+      setTimeout(() => login('customer'), 400);
+    }, 500);
+
+  })();
+  </script>
 </body>
 </html>

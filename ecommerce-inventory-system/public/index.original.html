@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>E-Commerce &amp; Inventory | Real-Time Demo Console</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2330;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #2f81f7;
+    --green: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --purple: #a371f7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--panel); }
+  header h1 { margin: 0; font-size: 18px; }
+  header .sub { color: var(--muted); font-size: 12px; }
+  main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1500px; margin: 0 auto; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .card h2 { margin: 0 0 10px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .card h3 { margin: 0 0 8px; font-size: 14px; }
+  .sessions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .sessions { grid-template-columns: 1fr; } }
+  .session { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+  .sess-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .dot.connecting { background: var(--amber); }
+  .dot.error { background: var(--red); }
+  .status-text { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .info { font-size: 12px; color: var(--muted); min-height: 34px; word-break: break-all; }
+  .info b { color: var(--text); }
+  .rooms { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; min-height: 22px; }
+  .chip { font: 11px var(--mono); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--purple); background: #1b1530; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  button { font: inherit; font-size: 13px; color: var(--text); background: #21262d; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: wait; }
+  button.primary { background: #1f6feb; border-color: #1f6feb; }
+  button.warn { background: #3a2a0a; border-color: #6b4e0f; }
+  button.danger { background: #3a1416; border-color: #6e2328; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  input, select { width: 100%; font: inherit; font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+  .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+  .hint { margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .hint code { font-family: var(--mono); color: var(--amber); }
+  .scroll { max-height: 280px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; }
+  .mono { font-family: var(--mono); }
+  .badge { display: inline-block; min-width: 28px; text-align: center; padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .badge.green { background: #12301b; color: var(--green); }
+  .badge.amber { background: #3a2a0a; color: var(--amber); }
+  .badge.red { background: #3a1416; color: var(--red); }
+  .empty { padding: 18px; text-align: center; color: var(--muted); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .kpi { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+  .kpi .v { font-size: 17px; font-weight: 700; }
+  .kpi .l { font-size: 11px; color: var(--muted); }
+  .section-title { margin: 12px 0 6px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: 4px 10px; font-size: 13px; }
+  .kv div:nth-child(odd) { color: var(--muted); }
+  .log-card { position: sticky; top: 16px; height: calc(100vh - 100px); display: flex; flex-direction: column; }
+  @media (max-width: 1000px) { .log-card { position: static; height: 520px; } }
+  .log-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .log-head h2 { margin: 0; }
+  #logBox { flex: 1; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px; font: 12px/1.5 var(--mono); }
+  .entry { padding: 4px 6px; border-radius: 4px; border-left: 3px solid var(--border); margin-bottom: 3px; word-break: break-word; }
+  .entry.clickable { cursor: pointer; }
+  .entry.clickable:hover { background: #12171f; }
+  .entry.http { border-left-color: var(--accent); }
+  .entry.socket { border-left-color: var(--green); }
+  .entry.alert { border-left-color: var(--amber); background: #231b07; }
+  .entry.error { border-left-color: var(--red); background: #230e10; }
+  .entry.info { border-left-color: var(--muted); }
+  .entry .time { color: var(--muted); margin-right: 6px; }
+  .entry .tag { padding: 0 6px; border-radius: 4px; margin-right: 6px; font-size: 11px; background: #21262d; color: var(--text); }
+  .tag.admin { background: #3b1d5e; color: #d2b3ff; }
+  .tag.manager { background: #1d3b5e; color: #a5d0ff; }
+  .tag.customer { background: #12301b; color: #8fe3a1; }
+  .tag.http { background: #0e2a52; color: #9ec5ff; }
+  .entry .title { font-weight: 700; margin-right: 6px; }
+  .entry .summary { color: var(--muted); }
+  .entry pre { margin: 6px 0 2px; padding: 8px; background: #0a0e14; border-radius: 6px; color: #c9d1d9; overflow: auto; max-height: 260px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>E-Commerce &amp; Inventory | Real-Time Demo Console</h1>
+    <div class="sub">REST + Socket.IO test client. Log in as Staff and as Customer at the same time to watch events flow between them.</div>
+  </div>
+  <div class="sub mono" id="baseUrl"></div>
+</header>
+
+<main>
+  <div class="col">
+    <section class="card">
+      <h2>Sessions (JWT + Socket.IO)</h2>
+      <div class="sessions">
+        <div class="session">
+          <div class="sess-head"><span class="dot" id="dot-staff"></span><strong>Staff session</strong><span class="status-text" id="status-staff">Disconnected</span></div>
+          <div class="info" id="info-staff">Not logged in</div>
+          <div class="rooms" id="rooms-staff"></div>
+          <div class="btn-row">
+            <button class="primary" data-act="login-admin">Login as Admin</button>
+            <button data-act="login-manager">Manager</button>
+            <button data-act="refresh-staff">Refresh token</button>
+            <button class="danger" data-act="logout-staff">Logout</button>
+          </div>
+        </div>
+        <div class="session">
+          <div class="sess-head"><span class="dot" id="dot-customer"></span><strong>Customer session</strong><span class="status-text" id="status-customer">Disconnected</span></div>
+          <div class="info" id="info-customer">Not logged in</div>
+          <div class="rooms" id="rooms-customer"></div>
+          <div class="btn-row">
+            <button class="primary" data-act="login-customer">Login as Customer</button>
+            <button data-act="refresh-customer">Refresh token</button>
+            <button class="danger" data-act="logout-customer">Logout</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Test Console</h2>
+      <div class="controls">
+        <div class="field"><label for="orderProduct">Product to order</label><select id="orderProduct"><option value="">Browse products first</option></select></div>
+        <div class="field"><label for="orderQty">Quantity</label><input id="orderQty" type="number" min="1" value="1" /></div>
+        <div class="field"><label for="couponCode">Coupon code</label><input id="couponCode" value="WELCOME10" /></div>
+        <div class="field"><label for="orderId">Order ID (auto-filled)</label><input id="orderId" placeholder="latest order" /></div>
+        <div class="field"><label for="statusSelect">New order status (admin)</label>
+          <select id="statusSelect">
+            <option value="next">Next step (auto)</option>
+            <option value="confirmed">confirmed</option>
+            <option value="shipped">shipped</option>
+            <option value="delivered">delivered</option>
+            <option value="cancelled">cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" data-act="browse">1. Browse Products</button>
+        <button class="primary" data-act="order">2. Validate Coupon &amp; Place Order</button>
+        <button class="primary" data-act="status">3. Update Order Status (Admin)</button>
+        <button class="primary" data-act="analytics">4. Fetch Analytics &amp; Recommendations</button>
+        <button class="warn" data-act="cancel">Cancel Order (Customer)</button>
+        <button class="warn" data-act="rbac">RBAC check (expect 401 / 403)</button>
+      </div>
+      <div class="hint">
+        <b>Quick demo:</b> login Admin + Customer, browse, pick <code>Wireless Earbuds Pro</code> with quantity <code>3</code>, place the order.
+        The admin socket receives <code>order:new</code>, <code>stock:updated</code> and <code>alert:lowStock</code>. Then run step 3: the customer socket receives <code>order:statusChanged</code>.
+        Cancelling an order restores stock. Click any log line to expand its JSON.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Product Catalogue (live stock)</h2>
+      <div class="scroll" id="catalogue"></div>
+    </section>
+
+    <section class="card">
+      <h2>Results</h2>
+      <div id="results"><div class="empty">Run an action to see formatted results here.</div></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card log-card">
+      <div class="log-head"><h2>Live Event Log</h2><button data-act="clear-log">Clear</button></div>
+      <div id="logBox"></div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+<script>
+  // Falls back to the client bundle served by our own Socket.IO server if the CDN is unreachable
+  if (typeof io === 'undefined') { document.write('<script src="/socket.io/socket.io.js"><\/script>'); }
+</script>
+<script>
+(function () {
+  'use strict';
+
+  const BASE = location.protocol.startsWith('http') ? location.origin : 'http://localhost:5000';
+
+  const ACCOUNTS = {
+    admin: { slot: 'staff', email: 'admin@shop.com', password: 'Admin@123' },
+    manager: { slot: 'staff', email: 'manager@shop.com', password: 'Manager@123' },
+    customer: { slot: 'customer', email: 'customer@shop.com', password: 'Customer@123' }
+  };
+  const NEXT_STATUS = { pending: 'confirmed', confirmed: 'shipped', shipped: 'delivered' };
+  const SERVER_EVENTS = ['stock:updated', 'alert:lowStock', 'order:new', 'order:statusChanged'];
+  const SHIPPING_ADDRESS = {
+    fullName: 'Demo Customer', phone: '9000000001', line1: '12 MG Road', line2: '',
+    city: 'Bengaluru', state: 'Karnataka', postalCode: '560001', country: 'India'
+  };
+
+  const blankSession = () => ({ user: null, accessToken: null, refreshToken: null, socket: null, rooms: [], status: 'offline' });
+  const sessions = { staff: blankSession(), customer: blankSession() };
+  const state = { products: [] };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (value) => String(value === undefined || value === null ? '' : value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = (n) => '\u20B9' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+  $('baseUrl').textContent = BASE;
+
+  // ---------- Event log ----------
+  const logBox = $('logBox');
+
+  function tagFor(slot) {
+    const user = sessions[slot] && sessions[slot].user;
+    return user ? user.role.toUpperCase() : String(slot).toUpperCase();
+  }
+
+  function log(kind, tag, title, data) {
+    const nearBottom = logBox.scrollHeight - logBox.scrollTop - logBox.clientHeight < 60;
+    const entry = document.createElement('div');
+    entry.className = 'entry ' + kind;
+
+    let summary = '';
+    if (data !== undefined) {
+      summary = JSON.stringify(data);
+      if (summary.length > 150) summary = summary.slice(0, 150) + '...';
+    }
+
+    entry.innerHTML =
+      '<span class="time">' + new Date().toLocaleTimeString() + '</span>' +
+      '<span class="tag ' + esc(String(tag).toLowerCase()) + '">' + esc(tag) + '</span>' +
+      '<span class="title">' + esc(title) + '</span>' +
+      '<span class="summary">' + esc(summary) + '</span>';
+
+    if (data !== undefined) {
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(data, null, 2);
+      pre.hidden = true;
+      entry.appendChild(pre);
+      entry.classList.add('clickable');
+      entry.addEventListener('click', () => { pre.hidden = !pre.hidden; });
+    }
+
+    logBox.appendChild(entry);
+    while (logBox.children.length > 400) logBox.removeChild(logBox.firstChild);
+    if (nearBottom) logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  // ---------- REST helper ----------
+  // credentials:'omit' on purpose: both sessions share one browser, so we send each session's own
+  // tokens explicitly (Bearer header / request body) instead of the shared refresh cookie.
+  async function api(slot, method, path, body, opts) {
+    const options = opts || {};
+    const session = slot ? sessions[slot] : null;
+    const headers = { 'Content-Type': 'application/json' };
+    if (session && session.accessToken) headers.Authorization = 'Bearer ' + session.accessToken;
+
+    const started = performance.now();
+    let res;
+    try {
+      res = await fetch(BASE + path, { method, headers, credentials: 'omit', body: body ? JSON.stringify(body) : undefined });
+    } catch (err) {
+      log('error', 'HTTP', method + ' ' + path + ' failed to reach the server', { error: err.message });
+      throw err;
+    }
+    const json = await res.json().catch(() => ({}));
+    const ms = Math.round(performance.now() - started);
+
+    if (res.status === 401 && json.code === 'TOKEN_EXPIRED' && session && session.refreshToken && !options.retried) {
+      log('info', 'AUTH', 'Access token expired, refreshing automatically');
+      await refreshSession(slot);
+      return api(slot, method, path, body, Object.assign({}, options, { retried: true }));
+    }
+
+    if (!res.ok) {
+      log('error', 'HTTP', method + ' ' + path + ' \u2192 ' + res.status + ' (' + ms + 'ms)', json);
+      const error = new Error(json.message || res.statusText);
+      error.status = res.status;
+      error.body = json;
+      throw error;
+    }
+    if (!options.quiet) log('http', 'HTTP', method + ' ' + path + ' \u2192 ' + res.status + ' (' + ms + 'ms)', json);
+    return json;
+  }
+
+  // ---------- Session UI ----------
+  function renderSession(slot) {
+    const s = sessions[slot];
+    $('dot-' + slot).className = 'dot ' + (s.status === 'offline' ? '' : s.status);
+    const labels = { offline: 'Disconnected', connecting: 'Connecting...', connected: 'Connected', error: 'Connection error' };
+    $('status-' + slot).textContent = labels[s.status] || s.status;
+
+    if (!s.user) {
+      $('info-' + slot).textContent = 'Not logged in';
+      $('rooms-' + slot).innerHTML = '';
+      return;
+    }
+    $('info-' + slot).innerHTML =
+      '<b>' + esc(s.user.name) + '</b> (' + esc(s.user.role) + ')<br>' + esc(s.user.email) +
+      '<br>access token: <span class="mono">' + esc((s.accessToken || '').slice(0, 24)) + '...</span>';
+    $('rooms-' + slot).innerHTML = s.rooms.map((room) => '<span class="chip">' + esc(room) + '</span>').join('');
+  }
+
+  function teardown(slot) {
+    const s = sessions[slot];
+    if (s.socket) {
+      s.socket.removeAllListeners();
+      s.socket.disconnect();
+    }
+    sessions[slot] = blankSession();
+    renderSession(slot);
+  }
+
+  function requireSession(slot, label) {
+    if (sessions[slot].accessToken) return true;
+    log('info', 'UI', 'Please log in first: ' + label);
+    return false;
+  }
+
+  // ---------- Socket.IO ----------
+  function connectSocket(slot) {
+    const s = sessions[slot];
+    s.status = 'connecting';
+    renderSession(slot);
+
+    // auth is a function so a reconnect always uses the latest (refreshed) access token
+    const socket = io(BASE, {
+      auth: (cb) => cb({ token: sessions[slot].accessToken }),
+      transports: ['websocket', 'polling']
+    });
+    s.socket = socket;
+    const isCurrent = () => sessions[slot].socket === socket;
+
+    socket.on('connect', () => {
+      if (!isCurrent()) return;
+      sessions[slot].status = 'connected';
+      renderSession(slot);
+      log('socket', tagFor(slot), 'socket connected', { socketId: socket.id });
+    });
+
+    socket.on('disconnect', (reason) => {
+      if (!isCurrent()) return;
+      sessions[slot].status = 'offline';
+      renderSession(slot);
+      log('info', tagFor(slot), 'socket disconnected', { reason });
+    });
+
+    socket.on('connect_error', (err) => {
+      if (!isCurrent()) return;
+      sessions[slot].status = 'error';
+      renderSession(slot);
+      log('error', tagFor(slot), 'socket connect_error', { message: err.message });
+    });
+
+    socket.on('socket:ready', (payload) => {
+      if (!isCurrent()) return;
+      sessions[slot].rooms = payload.rooms || [];
+      renderSession(slot);
+      log('socket', tagFor(slot), 'socket:ready (rooms joined)', payload);
+    });
+
+    SERVER_EVENTS.forEach((eventName) => {
+      socket.on(eventName, (payload) => {
+        if (!isCurrent()) return;
+        log(eventName === 'alert:lowStock' ? 'alert' : 'socket', tagFor(slot), eventName, payload);
+
+        if (eventName === 'stock:updated') applyStockUpdate(payload);
+        if (eventName === 'order:new' && slot === 'staff') $('orderId').value = payload.orderId;
+      });
+    });
+  }
+
+  // ---------- Auth actions ----------
+  async function login(key) {
+    const account = ACCOUNTS[key];
+    const slot = account.slot;
+    teardown(slot);
+
+    const json = await api(slot, 'POST', '/api/auth/login', { email: account.email, password: account.password });
+    Object.assign(sessions[slot], {
+      user: json.data.user,
+      accessToken: json.data.accessToken,
+      refreshToken: json.data.refreshToken
+    });
+    renderSession(slot);
+    connectSocket(slot);
+  }
+
+  async function refreshSession(slot) {
+    const s = sessions[slot];
+    if (!s.refreshToken) throw new Error('No refresh token for this session');
+
+    const res = await fetch(BASE + '/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'omit',
+      body: JSON.stringify({ refreshToken: s.refreshToken })
+    });
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      log('error', 'AUTH', 'POST /api/auth/refresh \u2192 ' + res.status, json);
+      teardown(slot);
+      throw new Error(json.message || 'Refresh failed');
+    }
+    s.accessToken = json.data.accessToken;
+    s.refreshToken = json.data.refreshToken;
+    renderSession(slot);
+    log('http', 'AUTH', 'POST /api/auth/refresh \u2192 200 (tokens rotated)', { accessToken: s.accessToken.slice(0, 24) + '...' });
+  }
+
+  async function logout(slot) {
+    const s = sessions[slot];
+    if (!s.user) { log('info', 'UI', 'This session is not logged in'); return; }
+    try {
+      await api(slot, 'POST', '/api/auth/logout', { refreshToken: s.refreshToken });
+    } finally {
+      teardown(slot);
+    }
+  }
+
+  // ---------- Catalogue ----------
+  function renderProducts() {
+    const box = $('catalogue');
+    if (!state.products.length) {
+      box.innerHTML = '<div class="empty">Click "Browse Products" to load the catalogue.</div>';
+      return;
+    }
+    const rows = state.products.map((p) => {
+      const low = p.stock <= p.lowStockThreshold;
+      const cls = p.stock === 0 ? 'red' : low ? 'amber' : 'green';
+      const rating = p.averageRating ? p.averageRating.toFixed(1) + ' \u2605 (' + p.numReviews + ')' : '-';
+      return '<tr><td>' + esc(p.name) + '</td><td class="mono">' + esc(p.sku) + '</td><td>' + esc(p.category) + '</td>' +
+        '<td class="num">' + money(p.price) + '</td>' +
+        '<td class="num"><span class="badge ' + cls + '" title="threshold ' + esc(p.lowStockThreshold) + '">' + esc(p.stock) + '</span></td>' +
+        '<td class="num">' + rating + '</td></tr>';
+    }).join('');
+    box.innerHTML = '<table><thead><tr><th>Product</th><th>SKU</th><th>Category</th><th class="num">Price</th><th class="num">Stock</th><th class="num">Rating</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function renderProductSelect() {
+    const select = $('orderProduct');
+    const previous = select.value;
+    const inStock = state.products.filter((p) => p.stock > 0);
+
+    select.innerHTML = inStock.length
+      ? inStock.map((p) => '<option value="' + esc(p._id) + '">' + esc(p.name) + ' (stock ' + esc(p.stock) + ', ' + money(p.price) + ')</option>').join('')
+      : '<option value="">No products in stock</option>';
+
+    const preferred = inStock.find((p) => p._id === previous) || inStock.find((p) => p.sku === 'ELEC-001');
+    if (preferred) select.value = preferred._id;
+  }
+
+  function applyStockUpdate(payload) {
+    const product = state.products.find((p) => p._id === payload.productId);
+    if (!product) return;
+    product.stock = payload.stock;
+    renderProducts();
+    renderProductSelect();
+  }
+
+  async function browseProducts(quiet) {
+    const json = await api('customer', 'GET', '/api/products?limit=50&sort=name_asc', null, { quiet: Boolean(quiet) });
+    state.products = json.data;
+    renderProducts();
+    renderProductSelect();
+  }
+
+  // ---------- Results panel ----------
+  function setResults(title, html) {
+    $('results').innerHTML = '<h3>' + esc(title) + '</h3>' + html;
+  }
+
+  function kv(pairs) {
+    return '<div class="kv">' + pairs.map(([k, v]) => '<div>' + esc(k) + '</div><div>' + v + '</div>').join('') + '</div>';
+  }
+
+  function renderOrder(title, order) {
+    const items = order.items.map((i) => esc(i.quantity) + ' \u00D7 ' + esc(i.name) + ' @ ' + money(i.price)).join('<br>');
+    setResults(title, kv([
+      ['Order ID', '<span class="mono">' + esc(order._id) + '</span>'],
+      ['Status', '<b>' + esc(order.status) + '</b>'],
+      ['Items', items],
+      ['Subtotal', money(order.subtotal)],
+      ['Discount', money(order.discountAmount) + (order.couponCode ? ' (' + esc(order.couponCode) + ')' : '')],
+      ['Total', '<b>' + money(order.totalAmount) + '</b>'],
+      ['History', order.statusHistory.map((h) => esc(h.status)).join(' \u2192 ')]
+    ]));
+  }
+
+  // ---------- Test actions ----------
+  async function validateAndOrder() {
+    if (!requireSession('customer', 'Login as Customer')) return;
+    if (!state.products.length) await browseProducts(true);
+
+    const productId = $('orderProduct').value;
+    const quantity = parseInt($('orderQty').value, 10) || 1;
+    if (!productId) { log('info', 'UI', 'No product selected (everything is out of stock?)'); return; }
+
+    const items = [{ productId, quantity }];
+    const code = $('couponCode').value.trim();
+    let couponToUse;
+
+    if (code) {
+      const check = await api('customer', 'POST', '/api/coupons/validate', { code, items });
+      if (check.data.valid) {
+        couponToUse = code;
+        log('info', 'COUPON', code + ' is valid. Discount ' + money(check.data.discountAmount) + ', final ' + money(check.data.finalAmount));
+      } else {
+        log('info', 'COUPON', code + ' is not applicable: ' + check.data.message + '. Placing the order without it.');
+      }
+    }
+
+    const order = await api('customer', 'POST', '/api/orders', {
+      items,
+      shippingAddress: SHIPPING_ADDRESS,
+      paymentMethod: 'cod',
+      couponCode: couponToUse
+    });
+
+    $('orderId').value = order.data._id;
+    renderOrder('Order placed', order.data);
+    await browseProducts(true);
+  }
+
+  async function updateStatus() {
+    if (!requireSession('staff', 'Login as Admin or Manager')) return;
+
+    let orderId = $('orderId').value.trim();
+    if (!orderId) {
+      const pending = await api('staff', 'GET', '/api/orders?status=pending&limit=1', null, { quiet: true });
+      if (!pending.data.length) { log('info', 'UI', 'No pending orders found. Place an order as the customer first.'); return; }
+      orderId = pending.data[0]._id;
+      $('orderId').value = orderId;
+    }
+
+    let status = $('statusSelect').value;
+    if (status === 'next') {
+      const current = await api('staff', 'GET', '/api/orders/' + orderId, null, { quiet: true });
+      status = NEXT_STATUS[current.data.status];
+      if (!status) { log('info', 'UI', 'Order is already "' + current.data.status + '", so there is no next step.'); return; }
+    }
+
+    const json = await api('staff', 'PATCH', '/api/orders/' + orderId + '/status', { status, note: 'Updated from the demo console' });
+    renderOrder('Order status updated', json.data);
+  }
+
+  async function cancelOrder() {
+    if (!requireSession('customer', 'Login as Customer')) return;
+    const orderId = $('orderId').value.trim();
+    if (!orderId) { log('info', 'UI', 'No order ID. Place an order first.'); return; }
+
+    const json = await api('customer', 'PATCH', '/api/orders/' + orderId + '/cancel', { note: 'Cancelled from the demo console' });
+    renderOrder('Order cancelled (stock restored)', json.data);
+    await browseProducts(true);
+  }
+
+  function renderAnalytics(overview, categories, monthly) {
+    const o = overview.data;
+    const kpis = [
+      ['Total revenue', money(o.totalRevenue)], ['Total orders', o.totalOrders], ['Avg order value', money(o.averageOrderValue)],
+      ['Low-stock products', o.lowStockProducts], ['Orders with coupon', o.couponStats.ordersWithCoupon], ['Discounts given', money(o.couponStats.totalDiscountGiven)]
+    ].map(([label, value]) => '<div class="kpi"><div class="v">' + esc(value) + '</div><div class="l">' + esc(label) + '</div></div>').join('');
+
+    const top = o.topProducts.map((p) => '<tr><td>' + esc(p.name) + '</td><td class="num">' + esc(p.unitsSold) + '</td><td class="num">' + money(p.revenue) + '</td></tr>').join('');
+    const cats = categories.data.categories.map((c) =>
+      '<tr><td>' + esc(c.category) + '</td><td class="num">' + esc(c.unitsSold) + '</td><td class="num">' + money(c.grossRevenue) + '</td><td class="num">' + money(c.netRevenue) +
+      '</td><td class="num">' + esc(c.currentStock) + '</td><td class="num">' + money(c.inventoryValuation) + '</td><td class="num">' + esc(c.lowStockItems) + '</td></tr>').join('');
+    const months = monthly.data.series.map((m) =>
+      '<tr><td>' + esc(m.period) + '</td><td class="num">' + money(m.revenue) + '</td><td class="num">' + esc(m.orderCount) + '</td><td class="num">' + money(m.totalDiscounts) + '</td><td class="num">' + money(m.averageOrderValue) + '</td></tr>').join('');
+
+    return '<div class="kpis">' + kpis + '</div>' +
+      '<div class="section-title">Top 5 best-selling products</div><div class="scroll"><table><thead><tr><th>Product</th><th class="num">Units</th><th class="num">Revenue</th></tr></thead><tbody>' + top + '</tbody></table></div>' +
+      '<div class="section-title">Sales by category</div><div class="scroll"><table><thead><tr><th>Category</th><th class="num">Units</th><th class="num">Gross</th><th class="num">Net</th><th class="num">Stock</th><th class="num">Valuation</th><th class="num">Low</th></tr></thead><tbody>' + cats + '</tbody></table></div>' +
+      '<div class="section-title">Sales by month</div><div class="scroll"><table><thead><tr><th>Month</th><th class="num">Revenue</th><th class="num">Orders</th><th class="num">Discounts</th><th class="num">AOV</th></tr></thead><tbody>' + months + '</tbody></table></div>';
+  }
+
+  function renderRecommendations(recs) {
+    const d = recs.data;
+    const rows = d.recommendations.map((p) =>
+      '<tr><td>' + esc(p.name) + '</td><td>' + esc(p.category) + '</td><td class="num">' + money(p.price) + '</td><td class="num">' + (p.averageRating ? p.averageRating.toFixed(1) + ' \u2605' : '-') + '</td><td>' + esc(p.reason) + '</td></tr>').join('');
+    return '<div class="section-title">Recommendations (' + esc(d.strategy) + '; preferred: ' + esc(d.preferredCategories.join(', ') || 'none') + ')</div>' +
+      '<div class="scroll"><table><thead><tr><th>Product</th><th>Category</th><th class="num">Price</th><th class="num">Rating</th><th>Why</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  async function fetchAnalyticsAndRecs() {
+    let html = '';
+    const haveStaff = requireSession('staff', 'Login as Admin or Manager to load analytics');
+    const haveCustomer = requireSession('customer', 'Login as Customer to load recommendations');
+
+    if (haveStaff) {
+      const [overview, categories, monthly] = await Promise.all([
+        api('staff', 'GET', '/api/analytics/overview'),
+        api('staff', 'GET', '/api/analytics/sales-by-category'),
+        api('staff', 'GET', '/api/analytics/sales-by-date?groupBy=month')
+      ]);
+      html += renderAnalytics(overview, categories, monthly);
+    }
+    if (haveCustomer) {
+      const recs = await api('customer', 'GET', '/api/recommendations?limit=8');
+      html += renderRecommendations(recs);
+    }
+    if (html) setResults('Analytics & Recommendations', html);
+  }
+
+  async function rbacDemo() {
+    try { await api(null, 'GET', '/api/analytics/overview'); } catch (err) { /* expected 401, already logged */ }
+    if (sessions.customer.accessToken) {
+      try { await api('customer', 'GET', '/api/analytics/overview'); } catch (err) { /* expected 403, already logged */ }
+      try { await api('customer', 'POST', '/api/products', { name: 'Hacked', sku: 'HACK-1', category: 'X', price: 1, stock: 1 }); } catch (err) { /* expected 403 */ }
+    } else {
+      log('info', 'UI', 'Login as Customer as well to also see the 403 (forbidden) responses');
+    }
+    setResults('RBAC check', '<div class="hint">No token gives <code>401</code>. A customer token on admin-only routes gives <code>403</code>. See the red log entries.</div>');
+  }
+
+  // ---------- Button wiring ----------
+  const ACTIONS = {
+    'login-admin': () => login('admin'),
+    'login-manager': () => login('manager'),
+    'login-customer': () => login('customer'),
+    'refresh-staff': () => (sessions.staff.refreshToken ? refreshSession('staff') : log('info', 'UI', 'Staff session is not logged in')),
+    'refresh-customer': () => (sessions.customer.refreshToken ? refreshSession('customer') : log('info', 'UI', 'Customer session is not logged in')),
+    'logout-staff': () => logout('staff'),
+    'logout-customer': () => logout('customer'),
+    browse: () => browseProducts(false),
+    order: validateAndOrder,
+    status: updateStatus,
+    cancel: cancelOrder,
+    analytics: fetchAnalyticsAndRecs,
+    rbac: rbacDemo,
+    'clear-log': () => { logBox.innerHTML = ''; }
+  };
+
+  document.addEventListener('click', async (event) => {
+    const button = event.target.closest('button[data-act]');
+    if (!button || !ACTIONS[button.dataset.act]) return;
+
+    button.disabled = true;
+    try {
+      await ACTIONS[button.dataset.act]();
+    } catch (err) {
+      // HTTP errors are already logged by api(); log anything else here
+      if (!err.status) log('error', 'UI', err.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  // ---------- Init ----------
+  renderSession('staff');
+  renderSession('customer');
+  renderProducts();
+  log('info', 'UI', 'Console ready. Login as Admin and as Customer, then use the Test Console buttons.');
+})();
+</script>
+</body>
+</html>
