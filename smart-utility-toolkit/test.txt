@@ -1,1 +1,0 @@
-This file is used by fileManager.js during the file-system demonstration.
