@@ -1822,7 +1822,7 @@
         return;
       }
       try {
-        await api('customer', 'POST', '/api/wishlist', { productId });
+        await api('customer', 'POST', `/api/wishlist/${productId}`);
         showToast('Wishlist Updated', 'Item added to your wishlist.', 'success');
         loadPersonalization();
       } catch (err) {
